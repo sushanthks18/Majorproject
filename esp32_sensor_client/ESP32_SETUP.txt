@@ -1,0 +1,202 @@
+========================================
+ESP32 SENSOR CLIENT SETUP INSTRUCTIONS
+========================================
+
+📦 STEP 1: INSTALL REQUIRED LIBRARIES
+--------------------------------------
+Open Arduino IDE and install these libraries via Tools → Manage Libraries:
+
+1. ArduinoJson by Benoit Blanchon
+2. DHT sensor library by Adafruit
+3. Adafruit Unified Sensor (dependency for DHT)
+
+✅ ESP32 board support should already be installed
+   If not: File → Preferences → Additional Boards Manager URLs:
+   https://dl.espressif.com/dl/package_esp32_index.json
+
+
+🔧 STEP 2: CONFIGURE YOUR SETTINGS
+-----------------------------------
+Open esp32_sensor_client.ino and modify these lines:
+
+1. WiFi Credentials (Lines 25-26):
+   FROM:  const char* ssid = "YOUR_WIFI_SSID";
+          const char* password = "YOUR_WIFI_PASSWORD";
+   
+   TO:    const char* ssid = "YourActualWiFiName";
+          const char* password = "YourActualPassword";
+
+2. Server IP Address (Line 29):
+   
+   First, find your computer's IP address:
+   
+   On macOS:     ipconfig getifaddr en0
+   On Windows:   ipconfig (look for IPv4 Address)
+   On Linux:     hostname -I
+   
+   Example: If your IP is 192.168.1.105
+   
+   FROM:  const char* serverUrl = "http://192.168.1.100:5001/api/sensors/data";
+   TO:    const char* serverUrl = "http://192.168.1.105:5001/api/sensors/data";
+
+3. Device ID (Line 30) - Optional:
+   Change "ESP32_SENSOR_001" to a unique identifier for this device
+
+
+🔌 STEP 3: WIRE YOUR SENSORS
+-----------------------------
+Connect sensors to ESP32 as follows:
+
+DHT22 (Temperature & Humidity):
+   VCC  → 3.3V
+   DATA → GPIO 4
+   GND  → GND
+
+Capacitive Soil Moisture Sensor:
+   VCC  → 3.3V
+   AOUT → GPIO 34
+   GND  → GND
+
+pH Sensor (Analog):
+   VCC  → 5V
+   AOUT → GPIO 35
+   GND  → GND
+
+⚠️  IMPORTANT: 
+- Use 3.3V for DHT22 and soil moisture sensor
+- Use 5V only for pH sensor (if it requires 5V)
+- Double-check GPIO pins match the code
+
+
+📤 STEP 4: UPLOAD TO ESP32
+---------------------------
+1. Connect ESP32 to your computer via USB
+2. In Arduino IDE:
+   - Tools → Board → ESP32 Arduino → ESP32 Dev Module
+   - Tools → Port → Select your ESP32 port (e.g., /dev/cu.usbserial-0001)
+   - Tools → Upload Speed → 115200
+3. Click Upload button (→)
+4. Wait for "Done uploading" message
+
+
+📊 STEP 5: MONITOR OUTPUT
+--------------------------
+1. Click Tools → Serial Monitor
+2. Set baud rate to 115200
+3. You should see:
+   ✅ WiFi Connected!
+   ✅ Sending data to backend...
+   ✅ Response Code: 201
+   ✅ Data saved successfully!
+
+If you see errors, check:
+   ❌ WiFi SSID/password correct?
+   ❌ Server IP address correct?
+   ❌ Backend server running on port 5001?
+   ❌ ESP32 and computer on same WiFi network?
+
+
+🚀 STEP 6: START BACKEND SERVER
+--------------------------------
+Before uploading to ESP32, ensure backend is running:
+
+1. Open terminal in backend folder:
+   cd backend
+   
+2. Start server:
+   npm start
+   
+3. You should see:
+   🚀 Server running on port 5001
+   ✅ Connected to MongoDB
+
+4. Now upload code to ESP32
+
+
+🧪 TESTING WITHOUT HARDWARE
+----------------------------
+If you don't have sensors yet, the code will use default/simulated values:
+
+- DHT22 failure → Temperature: 25°C, Humidity: 65%
+- Soil sensor will read analog pin (may show random values)
+- pH sensor will read analog pin (may show random values)
+
+You can test the WiFi connection and data transmission this way!
+
+
+🔒 OPTIONAL: API KEY AUTHENTICATION
+------------------------------------
+To enable API key authentication:
+
+1. Add to backend/.env:
+   SENSOR_API_KEY=your-secure-key-123
+
+2. In esp32_sensor_client.ino, change line 31:
+   const char* apiKey = "your-secure-key-123";
+
+3. Uncomment API key validation in backend/routes/sensors.js
+
+
+📱 VIEW LIVE DATA
+-----------------
+1. Login to web app: http://localhost:5173
+2. Use credentials: farmer1@test.com / password123
+3. Go to Dashboard
+4. Watch sensor cards update in real-time every 5 seconds!
+
+
+🛠️ TROUBLESHOOTING
+-------------------
+
+Problem: WiFi won't connect
+Solution: 
+- Check SSID/password are correct
+- Ensure router is 2.4GHz (ESP32 doesn't support 5GHz)
+- Move ESP32 closer to router
+- Check Serial Monitor for error messages
+
+Problem: HTTP Error Code -1 or timeout
+Solution:
+- Verify backend server is running (npm start)
+- Check server IP address is correct
+- Ensure ESP32 and computer on same network
+- Try pinging the server IP from another device
+- Check firewall settings
+
+Problem: Error Code 404
+Solution:
+- Verify server URL includes "/api/sensors/data"
+- Check backend routes are properly configured
+
+Problem: Sensor readings are NaN or 0
+Solution:
+- Check sensor wiring
+- Verify correct GPIO pins
+- Test sensors individually with simple Arduino sketches
+- Check power supply is adequate
+
+
+📞 SUPPORT
+----------
+Serial Monitor shows detailed error messages to help diagnose issues.
+
+Common error patterns:
+✅ Response Code: 201  → Working perfectly!
+❌ Error Code: -1      → Cannot connect to server
+❌ Error Code: 404     → Wrong URL
+❌ Error Code: 401     → Authentication failed
+❌ DHT22 read failed   → Sensor wiring issue
+
+
+🎯 SUMMARY
+----------
+1. ✅ Install libraries (ArduinoJson, DHT sensor library)
+2. ✅ Update WiFi credentials
+3. ✅ Update server IP address (find with: ipconfig getifaddr en0)
+4. ✅ Wire sensors to correct GPIO pins
+5. ✅ Start backend server (npm start)
+6. ✅ Upload to ESP32
+7. ✅ Monitor Serial output
+8. ✅ View data on web dashboard
+
+Your ESP32 is now sending live sensor data to the cloud! 🌾📡
