@@ -2,17 +2,18 @@ import express from 'express';
 import SensorData from '../models/SensorData.js';
 import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 import fetch from 'node-fetch';
+import { predictCrop } from '../ml/ml_predictor.js';
 
 const router = express.Router();
 const ML_API_URL = 'http://localhost:5002/predict';
 
-// Crop recommendation using ML model
+// Crop recommendation using TRAINED ML MODEL (Random Forest)
 router.post('/crop', authenticate, async (req, res) => {
   try {
-    const { temperature, humidity, soilMoisture, pH } = req.body;
+    const { temperature, humidity, soilMoisture, pH, rainfall = 100 } = req.body;
 
-    console.log('\n🌾 [Crop Recommendation Request]');
-    console.log('Data:', { temperature, humidity, soilMoisture, pH });
+    console.log('\n🌾 [Crop Recommendation Request - USING ML MODEL]');
+    console.log('Data:', { temperature, humidity, soilMoisture, pH, rainfall });
 
     // Validate input
     if (!temperature || !humidity || !soilMoisture || !pH) {
@@ -20,6 +21,38 @@ router.post('/crop', authenticate, async (req, res) => {
         error: 'Missing required fields: temperature, humidity, soilMoisture, pH' 
       });
     }
+
+    // ==========================================
+    // USE TRAINED RANDOM FOREST ML MODEL
+    // ==========================================
+    try {
+      const mlResult = await predictCrop(temperature, humidity, soilMoisture, pH, rainfall);
+      
+      console.log('✅ ML Model Response:', mlResult);
+      
+      // Return ML model prediction
+      return res.json({
+        recommendedCrop: mlResult.primaryCrop,
+        confidence: mlResult.confidence,
+        suitableCrops: mlResult.recommendations,
+        mlModel: {
+          algorithm: mlResult.modelUsed + ' (Scikit-learn)',
+          accuracy: mlResult.accuracy,
+          features: mlResult.inputParameters,
+          trainingDataset: 'crop_dataset.csv (459 samples, 8 crops)',
+          alternativeModel: mlResult.alternativeModel
+        },
+        conditions: mlResult.inputParameters
+      });
+    } catch (mlError) {
+      console.error('❌ ML Model Error:', mlError.message);
+      console.log('⚠️ Falling back to rule-based algorithm...');
+      // Fall through to rule-based algorithm below
+    }
+
+    // ==========================================
+    // FALLBACK: Rule-based algorithm (if ML fails)
+    // ==========================================
 
     // Advanced crop recommendation algorithm with ML-like scoring
     const crops = [];

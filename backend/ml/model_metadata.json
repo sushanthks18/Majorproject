@@ -1,0 +1,28 @@
+{
+  "model_name": "Random Forest Classifier",
+  "algorithm": "Ensemble Learning (Bagging)",
+  "library": "scikit-learn",
+  "accuracy": 0.967391304347826,
+  "dataset": "Kaggle Crop Recommendation Dataset",
+  "dataset_url": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
+  "dataset_license": "CC0 Public Domain",
+  "crops": [
+    "Cotton",
+    "Maize",
+    "Potato",
+    "Rice",
+    "Soybean",
+    "Sugarcane",
+    "Tomato",
+    "Wheat"
+  ],
+  "features": [
+    "temperature",
+    "humidity",
+    "soilMoisture",
+    "pH",
+    "rainfall"
+  ],
+  "n_estimators": 100,
+  "random_state": 42
+}

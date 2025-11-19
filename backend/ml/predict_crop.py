@@ -4,15 +4,12 @@ import os
 import sys
 
 def load_models():
-    """Load trained models"""
+    """Load trained Random Forest model"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     try:
         with open(os.path.join(script_dir, 'random_forest_model.pkl'), 'rb') as f:
             rf_model = pickle.load(f)
-        
-        with open(os.path.join(script_dir, 'decision_tree_model.pkl'), 'rb') as f:
-            dt_model = pickle.load(f)
         
         with open(os.path.join(script_dir, 'label_encoder.pkl'), 'rb') as f:
             label_encoder = pickle.load(f)
@@ -20,17 +17,17 @@ def load_models():
         with open(os.path.join(script_dir, 'model_metadata.json'), 'r') as f:
             metadata = json.load(f)
         
-        return rf_model, dt_model, label_encoder, metadata
+        return rf_model, label_encoder, metadata
     except FileNotFoundError as e:
         print(f"Error: Model files not found. Please run train_model.py first.")
         print(f"Missing file: {e.filename}")
-        return None, None, None, None
+        return None, None, None
 
 def predict_crop(temperature, humidity, soilMoisture, pH, rainfall=100):
-    """Predict best crop using ML models"""
+    """Predict best crop using Random Forest ML model"""
     
-    # Load models
-    rf_model, dt_model, label_encoder, metadata = load_models()
+    # Load model
+    rf_model, label_encoder, metadata = load_models()
     
     if rf_model is None:
         return None
@@ -38,16 +35,14 @@ def predict_crop(temperature, humidity, soilMoisture, pH, rainfall=100):
     # Prepare input
     X = [[temperature, humidity, soilMoisture, pH, rainfall]]
     
-    # Get predictions from both models
+    # Get prediction from Random Forest
     rf_pred_encoded = rf_model.predict(X)[0]
-    dt_pred_encoded = dt_model.predict(X)[0]
     
     # Get probabilities from Random Forest
     rf_probabilities = rf_model.predict_proba(X)[0]
     
-    # Decode predictions
+    # Decode prediction
     rf_prediction = label_encoder.inverse_transform([rf_pred_encoded])[0]
-    dt_prediction = label_encoder.inverse_transform([dt_pred_encoded])[0]
     
     # Get top 5 predictions with probabilities
     top_indices = rf_probabilities.argsort()[-5:][::-1]
@@ -109,13 +104,10 @@ def predict_crop(temperature, humidity, soilMoisture, pH, rainfall=100):
         'primaryCrop': rf_prediction,
         'confidence': round(float(rf_probabilities[rf_pred_encoded] * 100), 2),
         'recommendations': recommendations[:5],
-        'modelUsed': 'Random Forest',
-        'accuracy': metadata['random_forest_accuracy'] * 100,
-        'alternativeModel': {
-            'crop': dt_prediction,
-            'model': 'Decision Tree',
-            'accuracy': metadata['decision_tree_accuracy'] * 100
-        },
+        'modelUsed': 'Random Forest Classifier',
+        'accuracy': metadata['accuracy'] * 100,
+        'dataset': metadata['dataset'],
+        'dataset_url': metadata['dataset_url'],
         'inputParameters': {
             'temperature': temperature,
             'humidity': humidity,

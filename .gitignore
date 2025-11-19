@@ -11,3 +11,10 @@ build/
 package-lock.json
 frontend/node_modules/
 backend/node_modules/
+
+# ML Model files (too large for Git)
+*.pkl
+*.h5
+*.pth
+__pycache__/
+*.pyc
