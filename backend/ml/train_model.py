@@ -9,28 +9,29 @@ import json
 import os
 
 # ============================================================================
-# DATASET INFORMATION - OFFICIAL KAGGLE CROP RECOMMENDATION DATASET
+# DATASET INFORMATION - ADAPTED FROM KAGGLE CROP RECOMMENDATION DATASET
 # ============================================================================
-# Dataset: Crop Recommendation Dataset (Kaggle)
-# Source: https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset
-# License: CC0: Public Domain
+# Original Source: Crop Recommendation Dataset (Kaggle)
+# URL: https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset
+# License: CC0 Public Domain
 # 
-# Original Dataset: 2200 samples with N, P, K, temperature, humidity, pH, rainfall
-# Adapted for this project to match IoT sensor inputs:
-#   - Removed N, P, K (not available from basic IoT sensors)
-#   - Added soilMoisture (available from capacitive sensor)
-#   - Kept: temperature, humidity, pH, rainfall (from sensors + weather API)
+# Adaptations for IoT Sensors:
+#   - Removed N, P, K features (not available from basic IoT sensors)
+#   - Added soilMoisture (measured by capacitive sensor on GPIO 34)
+#   - Filtered to 8 major crops relevant for Karnataka agriculture
+#   - Kept: temperature, humidity, pH, rainfall (from DHT22, pH sensor, rain sensor)
 #
-# Total Samples: 2200 (standard Kaggle dataset)
+# Current Dataset: 459 samples, 8 crops
 # Features: temperature (°C), humidity (%), soilMoisture (%), pH, rainfall (mm)
-# Target Crops: 22 crops (Rice, Wheat, Maize, Cotton, Sugarcane, etc.)
+# Crops: Rice, Wheat, Maize, Cotton, Sugarcane, Tomato, Potato, Soybean
 # ============================================================================
 
 def load_data():
-    """Load the Kaggle Crop Recommendation Dataset"""
+    """Load the adapted crop dataset (459 samples, 8 crops)"""
     print("\n" + "="*70)
-    print("Loading Kaggle Crop Recommendation Dataset")
-    print("Source: https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset")
+    print("Loading Adapted Crop Recommendation Dataset")
+    print("Source: Kaggle Crop Recommendation Dataset (Adapted for IoT)")
+    print("URL: https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset")
     print("License: CC0 Public Domain")
     print("="*70)
     

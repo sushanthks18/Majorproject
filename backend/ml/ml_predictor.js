@@ -17,22 +17,34 @@ const __dirname = path.dirname(__filename);
  * @param {number} soilMoisture - Soil moisture percentage
  * @param {number} pH - Soil pH level
  * @param {number} rainfall - Rainfall in mm (default 100)
+ * @param {Object} regionalDistribution - Regional crop distribution data (optional)
  * @returns {Promise<Object>} Prediction result with crop, confidence, and recommendations
  */
-export async function predictCrop(temperature, humidity, soilMoisture, pH, rainfall = 100) {
+export async function predictCrop(temperature, humidity, soilMoisture, pH, rainfall = 100, regionalDistribution = null) {
   return new Promise((resolve, reject) => {
-    console.log('\n🤖 [ML Model] Invoking Random Forest Classifier...');
+    console.log('\n🤖 [ML Model] Invoking Market-Aware Random Forest Classifier...');
     console.log(`Input: T=${temperature}°C, H=${humidity}%, SM=${soilMoisture}%, pH=${pH}, R=${rainfall}mm`);
+    if (regionalDistribution) {
+      console.log('📊 Regional Distribution:', JSON.stringify(regionalDistribution));
+    }
 
-    // Spawn Python process
-    const pythonProcess = spawn('python3', [
-      path.join(__dirname, 'predict_crop.py'),
+    // Prepare Python script arguments
+    const scriptArgs = [
+      path.join(__dirname, 'market_aware_predictor.py'),
       temperature.toString(),
       humidity.toString(),
       soilMoisture.toString(),
       pH.toString(),
       rainfall.toString()
-    ]);
+    ];
+
+    // Add regional distribution as JSON if provided
+    if (regionalDistribution) {
+      scriptArgs.push(JSON.stringify(regionalDistribution));
+    }
+
+    // Spawn Python process
+    const pythonProcess = spawn('python3', scriptArgs);
 
     let dataString = '';
     let errorString = '';
@@ -54,9 +66,12 @@ export async function predictCrop(temperature, humidity, soilMoisture, pH, rainf
 
       try {
         const result = JSON.parse(dataString);
-        console.log('✅ [ML Model] Prediction successful');
-        console.log(`Recommended Crop: ${result.primaryCrop} (${result.confidence}% confidence)`);
-        console.log(`Model: ${result.modelUsed} (${result.accuracy.toFixed(2)}% accuracy)`);
+        console.log('✅ [ML Model] Market-Aware Prediction successful');
+        console.log(`Recommended Crop: ${result.recommended_crop} (Profitability: ${result.profitability_score.toFixed(2)}%)`);
+        console.log(`Model: ${result.model_used} (${result.accuracy.toFixed(2)}% accuracy)`);
+        if (result.regional_insights.diversification_needed) {
+          console.log('⚠️  [Market Alert] Regional diversification recommended!');
+        }
         resolve(result);
       } catch (error) {
         console.error('❌ [ML Model] JSON parse error:', error);

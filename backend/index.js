@@ -19,6 +19,7 @@ import fieldRoutes from './routes/fields.js';
 import satelliteRoutes from './routes/satellite.js';
 import irrigationRoutes from './routes/irrigation.js';
 import assistantRoutes from './routes/assistant.js';
+import cropPlanRoutes from './routes/cropPlans.js';
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ app.use('/api/fields', fieldRoutes);
 app.use('/api/satellite', satelliteRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/assistant', assistantRoutes);
+app.use('/api/crop-plans', cropPlanRoutes);
 
 // Health check
 app.get('/', (req, res) => {

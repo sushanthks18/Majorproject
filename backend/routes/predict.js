@@ -1,5 +1,7 @@
 import express from 'express';
 import SensorData from '../models/SensorData.js';
+import Field from '../models/Field.js';
+import CropPlan from '../models/CropPlan.js';
 import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 import fetch from 'node-fetch';
 import { predictCrop } from '../ml/ml_predictor.js';
@@ -7,13 +9,13 @@ import { predictCrop } from '../ml/ml_predictor.js';
 const router = express.Router();
 const ML_API_URL = 'http://localhost:5002/predict';
 
-// Crop recommendation using TRAINED ML MODEL (Random Forest)
+// Crop recommendation using TRAINED ML MODEL (Random Forest) with Market-Aware Diversification
 router.post('/crop', authenticate, async (req, res) => {
   try {
-    const { temperature, humidity, soilMoisture, pH, rainfall = 100 } = req.body;
+    const { temperature, humidity, soilMoisture, pH, rainfall = 100, fieldId } = req.body;
 
-    console.log('\n🌾 [Crop Recommendation Request - USING ML MODEL]');
-    console.log('Data:', { temperature, humidity, soilMoisture, pH, rainfall });
+    console.log('\n🌾 [Crop Recommendation Request - MARKET-AWARE ML MODEL]');
+    console.log('Data:', { temperature, humidity, soilMoisture, pH, rainfall, fieldId });
 
     // Validate input
     if (!temperature || !humidity || !soilMoisture || !pH) {
@@ -23,26 +25,116 @@ router.post('/crop', authenticate, async (req, res) => {
     }
 
     // ==========================================
-    // USE TRAINED RANDOM FOREST ML MODEL
+    // FETCH REGIONAL CROP DISTRIBUTION DATA
+    // ==========================================
+    let regionalDistribution = null;
+    let farmerRegion = null;
+
+    try {
+      // Get farmer's field info for regional context
+      if (fieldId) {
+        const field = await Field.findById(fieldId);
+        if (field) {
+          farmerRegion = {
+            state: field.state,
+            district: field.district,
+            taluk: field.taluk
+          };
+        }
+      }
+
+      // If no field specified, get any field of the user for regional context
+      if (!farmerRegion) {
+        const userField = await Field.findOne({ farmerId: req.user.id });
+        if (userField) {
+          farmerRegion = {
+            state: userField.state,
+            district: userField.district,
+            taluk: userField.taluk
+          };
+        }
+      }
+
+      // Query regional crop plans for current season
+      if (farmerRegion && farmerRegion.district) {
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+        
+        // Determine current season
+        let currentSeason = 'year-round';
+        if (currentMonth >= 6 && currentMonth <= 10) {
+          currentSeason = 'kharif';  // June-Oct
+        } else if (currentMonth >= 10 || currentMonth <= 3) {
+          currentSeason = 'rabi';    // Nov-Mar
+        } else {
+          currentSeason = 'zaid';    // Apr-May
+        }
+
+        // Get all crop plans in the region for current season
+        const regionalPlans = await CropPlan.find({
+          'region.district': farmerRegion.district,
+          year: currentYear,
+          season: { $in: [currentSeason, 'year-round'] },
+          status: { $in: ['planned', 'sowing', 'growing'] }
+        });
+
+        // Calculate crop distribution
+        const cropDistribution = {};
+        let totalArea = 0;
+
+        regionalPlans.forEach(plan => {
+          const crop = plan.selectedCrop;
+          const area = plan.areaHectares || 0;
+          cropDistribution[crop] = (cropDistribution[crop] || 0) + area;
+          totalArea += area;
+        });
+
+        regionalDistribution = {
+          total_area: totalArea,
+          crop_distribution: cropDistribution,
+          region: farmerRegion,
+          season: currentSeason,
+          year: currentYear
+        };
+
+        console.log('📊 Regional Distribution:', regionalDistribution);
+      }
+    } catch (regionError) {
+      console.warn('⚠️  Could not fetch regional data:', regionError.message);
+      // Continue without regional data
+    }
+
+    // ==========================================
+    // USE MARKET-AWARE ML MODEL
     // ==========================================
     try {
-      const mlResult = await predictCrop(temperature, humidity, soilMoisture, pH, rainfall);
+      const mlResult = await predictCrop(
+        temperature, 
+        humidity, 
+        soilMoisture, 
+        pH, 
+        rainfall,
+        regionalDistribution
+      );
       
       console.log('✅ ML Model Response:', mlResult);
       
-      // Return ML model prediction
+      // Return market-aware ML model prediction
       return res.json({
-        recommendedCrop: mlResult.primaryCrop,
-        confidence: mlResult.confidence,
+        recommendedCrop: mlResult.recommended_crop,
+        profitabilityScore: mlResult.profitability_score,
+        suitabilityScore: mlResult.suitability_score,
         suitableCrops: mlResult.recommendations,
+        regionalInsights: mlResult.regional_insights,
         mlModel: {
-          algorithm: mlResult.modelUsed + ' (Scikit-learn)',
+          algorithm: mlResult.model_used,
           accuracy: mlResult.accuracy,
-          features: mlResult.inputParameters,
-          trainingDataset: 'crop_dataset.csv (459 samples, 8 crops)',
-          alternativeModel: mlResult.alternativeModel
+          features: mlResult.input_parameters,
+          marketFactorsApplied: mlResult.market_factors_applied,
+          diversificationStrategy: mlResult.diversification_strategy
         },
-        conditions: mlResult.inputParameters
+        conditions: mlResult.input_parameters,
+        marketAware: true
       });
     } catch (mlError) {
       console.error('❌ ML Model Error:', mlError.message);

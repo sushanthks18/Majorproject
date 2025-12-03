@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Card from '../../components/Card';
 import Loading from '../../components/Loading';
-import { TrendingUp, TrendingDown, Calendar, MapPin, DollarSign, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, MapPin, DollarSign, AlertCircle, RefreshCw, Database } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import { formatCurrency } from '../../utils/helpers';
 
 const MandiPrices = () => {
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState('Rice');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [days, setDays] = useState(30);
@@ -51,10 +52,43 @@ const MandiPrices = () => {
       const response = await api.get(`/mandi/trends/${selectedCrop}`, { params });
       setPriceData(response.data);
     } catch (error) {
-      toast.error('Failed to fetch mandi prices');
+      if (error.response?.status === 404) {
+        toast.error('No price data available for this selection');
+        setPriceData(null);
+      } else {
+        toast.error('Failed to fetch mandi prices');
+      }
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshData = async () => {
+    try {
+      setRefreshing(true);
+      toast.loading('Fetching fresh data from Government API...');
+      
+      const response = await api.post('/mandi/refresh', {
+        crop: selectedCrop,
+        location: selectedLocation
+      });
+      
+      toast.dismiss();
+      toast.success(`Refreshed! ${response.data.stats.newRecords} new records added`);
+      
+      // Reload data
+      await fetchPriceTrends();
+    } catch (error) {
+      toast.dismiss();
+      if (error.response?.status === 404) {
+        toast.error('Government API does not have data for this selection');
+      } else {
+        toast.error('Failed to refresh data');
+      }
+      console.error(error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -91,9 +125,30 @@ const MandiPrices = () => {
       <Navbar role="farmer" />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Mandi Price Trends</h1>
-          <p className="text-gray-600">Check market prices and get selling recommendations</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Mandi Price Trends</h1>
+            <p className="text-gray-600">Check market prices and get selling recommendations</p>
+          </div>
+          {priceData && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <Database className="w-4 h-4 text-blue-600" />
+                <div className="text-xs">
+                  <p className="text-blue-800 font-semibold">{priceData.dataSource || 'Unknown'}</p>
+                  <p className="text-blue-600">Last updated: {new Date(priceData.lastUpdated).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <button
+                onClick={refreshData}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh Data'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -329,10 +384,22 @@ const MandiPrices = () => {
                 <AlertCircle className="w-6 h-6 text-blue-600 mt-1" />
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-2">About Mandi Prices</h4>
+                  <p className="text-sm text-gray-700 mb-2">
+                    {priceData.dataSource === 'Government of India - AGMARKNET' ? (
+                      <>
+                        <strong className="text-blue-800">Real Data Source:</strong> Prices are fetched from the official <strong>Government of India AGMARKNET API</strong>, 
+                        which provides authentic agricultural market data from mandis across India. This ensures you get accurate, up-to-date market information.
+                      </>
+                    ) : (
+                      <>
+                        Prices are based on market data from nearby agricultural markets (mandis).
+                      </>
+                    )}
+                  </p>
                   <p className="text-sm text-gray-700">
-                    Prices are based on real-time market data from nearby agricultural markets (mandis). 
                     The recommendation is calculated using historical price patterns, seasonal trends, and market analysis. 
                     For best results, monitor prices regularly and consult with local traders before making selling decisions.
+                    Click <strong>"Refresh Data"</strong> to fetch the latest prices from government servers.
                   </p>
                 </div>
               </div>

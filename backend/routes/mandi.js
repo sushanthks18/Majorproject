@@ -4,14 +4,148 @@ import PriceAlert from '../models/PriceAlert.js';
 import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 import { createNotification } from '../utils/notificationService.js';
 import { getDistance } from 'geolib';
+import fetch from 'node-fetch';
 
 const router = express.Router();
+
+// Government API endpoint for mandi prices
+const AGMARKNET_API = 'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070';
+const API_KEY = process.env.DATA_GOV_API_KEY || '579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b';
+
+// Crop name mapping (frontend to API)
+const CROP_MAPPING = {
+  'Rice': 'Rice',
+  'Wheat': 'Wheat',
+  'Maize': 'Maize',
+  'Cotton': 'Cotton',
+  'Sugarcane': 'Sugarcane',
+  'Tomato': 'Tomato',
+  'Potato': 'Potato',
+  'Onion': 'Onion',
+  'Soybean': 'Soya bean'
+};
+
+// Market/State mapping
+const MARKET_MAPPING = {
+  'Bangalore APMC': { state: 'Karnataka', district: 'Bangalore' },
+  'Yeshwantpur Mandi': { state: 'Karnataka', district: 'Bangalore' },
+  'KR Market': { state: 'Karnataka', district: 'Bangalore' },
+  'Mysore APMC': { state: 'Karnataka', district: 'Mysore' },
+  'Hubli APMC': { state: 'Karnataka', district: 'Dharwad' },
+  'Dharwad Mandi': { state: 'Karnataka', district: 'Dharwad' }
+};
+
+/**
+ * Fetch real mandi prices from Government of India API
+ * Data source: AGMARKNET (Agricultural Marketing Department)
+ */
+async function fetchRealMandiPrices(crop, state = 'Karnataka', limit = 100) {
+  try {
+    const apiCrop = CROP_MAPPING[crop] || crop;
+    
+    // Build API URL with filters
+    const params = new URLSearchParams({
+      'api-key': API_KEY,
+      'format': 'json',
+      'limit': limit.toString(),
+      'filters[state]': state,
+      'filters[commodity]': apiCrop
+    });
+
+    const url = `${AGMARKNET_API}?${params.toString()}`;
+    
+    console.log(`🌾 Fetching real mandi data for ${crop} from Government API...`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.records || data.records.length === 0) {
+      console.log(`⚠️  No real data found for ${crop}, will use cached data`);
+      return null;
+    }
+
+    console.log(`✅ Fetched ${data.records.length} real price records for ${crop}`);
+    
+    // Transform API data to our format
+    const prices = data.records.map(record => ({
+      crop: crop,
+      location: record.market || record.district || 'Unknown Market',
+      price: parseFloat(record.modal_price) || 0,
+      minPrice: parseFloat(record.min_price) || 0,
+      maxPrice: parseFloat(record.max_price) || 0,
+      date: record.arrival_date ? new Date(record.arrival_date) : new Date(),
+      state: record.state,
+      district: record.district,
+      variety: record.variety || 'General',
+      source: 'AGMARKNET'
+    })).filter(p => p.price > 0); // Remove zero prices
+
+    return prices;
+  } catch (error) {
+    console.error('❌ Error fetching real mandi prices:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Sync real mandi prices to database
+ */
+async function syncMandiPricesToDB(crop, location) {
+  try {
+    const marketInfo = MARKET_MAPPING[location] || { state: 'Karnataka', district: 'Bangalore' };
+    const realPrices = await fetchRealMandiPrices(crop, marketInfo.state);
+    
+    if (!realPrices || realPrices.length === 0) {
+      return false;
+    }
+
+    // Save to database
+    let savedCount = 0;
+    for (const priceData of realPrices) {
+      // Check if already exists
+      const existing = await MandiPrice.findOne({
+        crop: priceData.crop,
+        location: priceData.location,
+        date: priceData.date
+      });
+
+      if (!existing) {
+        await MandiPrice.create(priceData);
+        savedCount++;
+      }
+    }
+
+    console.log(`✅ Synced ${savedCount} new price records to database`);
+    return true;
+  } catch (error) {
+    console.error('Error syncing to DB:', error.message);
+    return false;
+  }
+}
 
 // Get mandi price trends for a crop
 router.get('/trends/:crop', authenticate, async (req, res) => {
   try {
     const { crop } = req.params;
     const { days = 30, location } = req.query;
+
+    console.log(`\n📊 [Mandi Trends] Request for ${crop} at ${location || 'All locations'}`);
+
+    // First, try to sync real data from government API
+    if (location) {
+      console.log('🔄 Attempting to fetch fresh data from Government API...');
+      await syncMandiPricesToDB(crop, location);
+    }
 
     const daysAgo = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     
@@ -24,9 +158,38 @@ router.get('/trends/:crop', authenticate, async (req, res) => {
       query.location = location;
     }
 
-    const prices = await MandiPrice.find(query)
+    let prices = await MandiPrice.find(query)
       .sort({ date: 1 })
       .limit(100);
+
+    // If no data found in DB, try direct API fetch
+    if (prices.length === 0) {
+      console.log('📊 No cached data, fetching directly from API...');
+      const marketInfo = location ? MARKET_MAPPING[location] : { state: 'Karnataka' };
+      const realPrices = await fetchRealMandiPrices(crop, marketInfo?.state || 'Karnataka');
+      
+      if (realPrices && realPrices.length > 0) {
+        // Save to DB for future use
+        for (const priceData of realPrices) {
+          try {
+            await MandiPrice.create(priceData);
+          } catch (err) {
+            // Ignore duplicates
+          }
+        }
+        prices = realPrices.filter(p => p.date >= daysAgo);
+        console.log(`✅ Using ${prices.length} real-time prices from Government API`);
+      }
+    } else {
+      console.log(`✅ Found ${prices.length} cached price records`);
+    }
+
+    if (prices.length === 0) {
+      return res.status(404).json({ 
+        error: 'No price data available',
+        message: `No data found for ${crop} in ${location || 'any location'}. Government API may not have recent data.`
+      });
+    }
 
     // Calculate statistics
     const priceValues = prices.map(p => p.price);
@@ -40,6 +203,9 @@ router.get('/trends/:crop', authenticate, async (req, res) => {
     // Predict best selling day
     const prediction = predictBestSellingDay(prices, trend);
 
+    // Add data source info
+    const hasRealData = prices.some(p => p.source === 'AGMARKNET');
+
     res.json({
       crop,
       location: location || 'All',
@@ -50,10 +216,12 @@ router.get('/trends/:crop', authenticate, async (req, res) => {
         average: Math.round(avgPrice),
         highest: maxPrice,
         lowest: minPrice,
-        trend: trend > 0 ? 'increasing' : trend < 0 ? 'decreasing' : 'stable',
+        trend: trend > 0 ? 'increasing' : trend < -0.05 ? 'decreasing' : 'stable',
         trendPercentage: Math.round(trend * 100)
       },
-      prediction
+      prediction,
+      dataSource: hasRealData ? 'Government of India - AGMARKNET' : 'Cached Data',
+      lastUpdated: prices[prices.length - 1]?.date || new Date()
     });
   } catch (error) {
     console.error('Error fetching mandi prices:', error);
@@ -311,6 +479,70 @@ router.get('/my-alerts', authenticateFarmer, async (req, res) => {
   } catch (error) {
     console.error('Error fetching alerts:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Refresh mandi data from Government API (Manual sync)
+router.post('/refresh', authenticate, async (req, res) => {
+  try {
+    const { crop, location } = req.body;
+    
+    if (!crop) {
+      return res.status(400).json({ error: 'Crop is required' });
+    }
+
+    console.log(`🔄 [Manual Refresh] Fetching fresh data for ${crop} from Government API...`);
+    
+    const marketInfo = location ? MARKET_MAPPING[location] : { state: 'Karnataka' };
+    const realPrices = await fetchRealMandiPrices(crop, marketInfo?.state || 'Karnataka', 200);
+    
+    if (!realPrices || realPrices.length === 0) {
+      return res.status(404).json({ 
+        error: 'No data available',
+        message: 'Government API does not have recent data for this crop/location combination'
+      });
+    }
+
+    // Save to database
+    let savedCount = 0;
+    let updatedCount = 0;
+    
+    for (const priceData of realPrices) {
+      const existing = await MandiPrice.findOne({
+        crop: priceData.crop,
+        location: priceData.location,
+        date: priceData.date
+      });
+
+      if (existing) {
+        // Update existing record
+        existing.price = priceData.price;
+        existing.minPrice = priceData.minPrice;
+        existing.maxPrice = priceData.maxPrice;
+        existing.source = 'AGMARKNET';
+        await existing.save();
+        updatedCount++;
+      } else {
+        // Create new record
+        await MandiPrice.create(priceData);
+        savedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Data refreshed successfully',
+      stats: {
+        totalRecords: realPrices.length,
+        newRecords: savedCount,
+        updatedRecords: updatedCount,
+        dataSource: 'Government of India - AGMARKNET',
+        fetchedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error refreshing mandi data:', error);
+    res.status(500).json({ error: 'Failed to refresh data' });
   }
 });
 

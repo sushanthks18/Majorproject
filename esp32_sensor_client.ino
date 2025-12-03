@@ -181,13 +181,25 @@ float readSoilMoisture() {
   int rawValue = analogRead(SOIL_PIN);
   
   // Convert to percentage (0-100%)
-  // Calibration: Adjust these values based on your sensor
-  // Dry soil = low value, Wet soil = high value
-  int dryValue = 3200;   // Sensor reading in dry soil
-  int wetValue = 1400;   // Sensor reading in wet soil
+  // ⚠️ CALIBRATION INSTRUCTIONS:
+  // 1. Place sensor in air → Note the Serial Monitor reading (should be ~3500-4095)
+  // 2. Place sensor in completely dry soil → Note reading (should be ~2800-3200)
+  // 3. Place sensor in wet soil/water → Note reading (should be ~1200-1600)
+  // 4. Update dryValue and wetValue below with YOUR sensor's readings
   
+  int dryValue = 3200;   // Air/Dry soil reading (HIGH resistance)
+  int wetValue = 1400;   // Wet soil reading (LOW resistance)
+  
+  // Map: Higher raw value = Drier (0%), Lower raw value = Wetter (100%)
   float moisture = map(rawValue, dryValue, wetValue, 0, 100);
   moisture = constrain(moisture, 0, 100);
+  
+  // Debug: Uncomment to see raw values for calibration
+  // Serial.print("Soil Raw: ");
+  // Serial.print(rawValue);
+  // Serial.print(" → Moisture: ");
+  // Serial.print(moisture);
+  // Serial.println("%");
   
   return moisture;
 }

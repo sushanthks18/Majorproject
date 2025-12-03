@@ -3,8 +3,7 @@ import mongoose from 'mongoose';
 const mandiPriceSchema = new mongoose.Schema({
   crop: {
     type: String,
-    required: true,
-    enum: ['Rice', 'Wheat', 'Cotton', 'Maize', 'Sugarcane', 'Mixed Vegetables']
+    required: true
   },
   location: {
     type: String,
@@ -25,6 +24,21 @@ const mandiPriceSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  state: {
+    type: String
+  },
+  district: {
+    type: String
+  },
+  variety: {
+    type: String,
+    default: 'General'
+  },
+  source: {
+    type: String,
+    enum: ['AGMARKNET', 'Manual', 'System'],
+    default: 'System'
   }
 });
 
