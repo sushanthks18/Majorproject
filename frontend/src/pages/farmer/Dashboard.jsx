@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Card, { StatCard } from '../../components/Card';
 import VoiceAssistant from '../../components/VoiceAssistant';
-import { Thermometer, Droplets, Sprout, FlaskConical, Search, Activity, TrendingUp, Bell, BarChart3, ShoppingBag, CloudRain, Wind, Eye } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, FlaskConical, Search, Activity, TrendingUp, Bell, BarChart3, ShoppingBag, CloudRain, Wind, Eye, MapPin, Lock, Calendar, ChevronRight, Clock, Beaker, Snowflake } from 'lucide-react';
 import api from '../../utils/api';
 import { getSocket } from '../../utils/socket';
 import toast from 'react-hot-toast';
@@ -19,6 +19,7 @@ const FarmerDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [esp32Connected, setEsp32Connected] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [fields, setFields] = useState([]);
   const [stats, setStats] = useState({
     activeRequests: 0,
     completedJobs: 0,
@@ -30,28 +31,50 @@ const FarmerDashboard = () => {
     fetchStats();
     fetchWeather();
     fetchTopNotifications();
+    fetchFields();
     setupRealtimeUpdates();
   }, []);
+
+  const fetchFields = async () => {
+    try {
+      const response = await api.get('/fields');
+      setFields(response.data);
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+    }
+  };
 
   const fetchSensorData = async () => {
     try {
       const response = await api.get('/sensors/latest');
-      const data = response.data.data;
-      setSensorData(data);
+      console.log('Sensor API response:', response.data);
       
-      // Check if this is recent ESP32 data
-      if (data) {
+      // Handle direct data (no nesting)
+      const data = response.data;
+      
+      if (data && data.temperature !== undefined) {
+        setSensorData(data);
+        console.log('✅ Sensor data loaded:', data);
+        
+        // Check if this is recent ESP32 data
         const now = new Date();
         const dataTime = new Date(data.timestamp || data.createdAt);
         const timeDiff = (now - dataTime) / 1000;
         
-        // If data is less than 30 seconds old, mark as connected
-        if (timeDiff < 30) {
+        console.log('Time difference:', timeDiff, 'seconds');
+        
+        // If data is less than 60 seconds old and has ESP32 markers
+        if (timeDiff < 60) {
           const isRealESP32 = data.deviceId?.includes('ESP32') || data.source === 'krishi-sakha';
           if (isRealESP32) {
             setEsp32Connected(true);
             setLastUpdateTime(dataTime);
+            console.log('💚 ESP32 Connected!');
+          } else {
+            console.log('🟡 Using default/simulated data');
           }
+        } else {
+          console.log('⚠️  Data is', Math.floor(timeDiff), 'seconds old');
         }
       }
     } catch (error) {
@@ -132,18 +155,22 @@ const FarmerDashboard = () => {
   const setupRealtimeUpdates = () => {
     const socket = getSocket();
     if (socket) {
+      console.log('🔌 Setting up WebSocket listeners...');
+      
       socket.on('sensorUpdate', (data) => {
+        console.log('📡 Received sensor update:', data);
         setSensorData(data);
         
-        // Only show ESP32 as connected if data has source from krishi-sakha or deviceId from ESP32
+        // Check if this is ESP32 data
         const isRealESP32 = data.deviceId?.includes('ESP32') || data.source === 'krishi-sakha';
         setEsp32Connected(isRealESP32);
         setLastUpdateTime(new Date());
         
         if (isRealESP32) {
-          console.log('✅ Live sensor data from ESP32:', data);
+          console.log('✅ Live ESP32 data:', data);
+          // Notification removed as per user request
         } else {
-          console.log('📊 Simulated sensor data:', data);
+          console.log('📊 Simulated data:', data);
         }
       });
 
@@ -222,33 +249,53 @@ const FarmerDashboard = () => {
     };
   };
 
+  // Check for critical alerts
   const checkAlerts = () => {
-    if (!sensorData || !esp32Connected) return [];
-    
     const alerts = [];
-    if (sensorData.temperature > 35) {
-      alerts.push({ type: 'warning', message: 'Heat stress alert - Temperature too high' });
+    
+    if (sensorData) {
+      // Temperature alerts
+      if (sensorData.temperature > 40) {
+        alerts.push({
+          type: 'critical',
+          message: '⚠️ Extreme heat detected! Protect your crops immediately.',
+          icon: <Thermometer className="w-5 h-5" />
+        });
+      } else if (sensorData.temperature < 10) {
+        alerts.push({
+          type: 'warning',
+          message: '❄️ Cold temperatures may affect crop growth.',
+          icon: <Snowflake className="w-5 h-5" />
+        });
+      }
+      
+      // Soil moisture alerts
+      if (sensorData.soilMoisture < 30) {
+        alerts.push({
+          type: 'critical',
+          message: '💦 Soil moisture critically low! Immediate irrigation needed.',
+          icon: <Droplets className="w-5 h-5" />
+        });
+      } else if (sensorData.soilMoisture > 80) {
+        alerts.push({
+          type: 'warning',
+          message: '🌊 Soil too wet! Risk of root rot and fungal diseases.',
+          icon: <Droplets className="w-5 h-5" />
+        });
+      }
+      
+      // pH alerts
+      if (sensorData.pH < 5.5 || sensorData.pH > 8.5) {
+        alerts.push({
+          type: 'critical',
+          message: '🧪 Soil pH outside optimal range! Crop health may be affected.',
+          icon: <Beaker className="w-5 h-5" />
+        });
+      }
     }
-    if (sensorData.humidity > 85) {
-      alerts.push({ type: 'warning', message: 'High humidity - Disease risk, consider spraying' });
-    }
-    if (sensorData.soilMoisture < 30) {
-      alerts.push({ type: 'danger', message: 'Low soil moisture - Irrigation needed' });
-    }
-    if (sensorData.pH < 5.5 || sensorData.pH > 8.0) {
-      alerts.push({ type: 'info', message: 'pH imbalance detected' });
-    }
+    
     return alerts;
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar role="farmer" />
-        <Loading />
-      </div>
-    );
-  }
 
   const alerts = checkAlerts();
 
@@ -292,55 +339,101 @@ const FarmerDashboard = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm opacity-90 mb-2">7-Day Forecast</p>
-                <div className="flex gap-2">
-                  {weather.forecast.slice(0, 7).map((day, idx) => (
-                    <div key={idx} className="text-center bg-white/20 rounded-lg p-2">
-                      <p className="text-xs">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                      <p className="text-lg font-bold">{day.temp}°</p>
-                      {day.rainfall > 0 && <p className="text-xs">☂️</p>}
-                    </div>
-                  ))}
-                </div>
+                <p className="text-sm opacity-90">Last updated</p>
+                <p className="font-semibold">{new Date().toLocaleTimeString()}</p>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Top Priority Notifications */}
-        {notifications.length > 0 && (
+        {/* Live Sensor Data */}
+        {sensorData && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <Bell className="w-6 h-6 text-red-600" />
-                Priority Alerts
-              </h2>
-              <button
-                onClick={() => navigate('/farmer/notifications')}
-                className="text-green-600 font-semibold hover:underline flex items-center gap-1"
-              >
-                View All ({notifications.length})
-              </button>
+              <h2 className="text-xl font-bold text-gray-800">📡 Live Sensor Data</h2>
+              {esp32Connected && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-semibold text-green-700">ESP32 Connected</span>
+                </div>
+              )}
             </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Temperature */}
+              <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-l-4 border-red-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Temperature</p>
+                    <p className="text-3xl font-bold text-gray-800">{sensorData.temperature}°C</p>
+                  </div>
+                  <Thermometer className="w-10 h-10 text-red-500" />
+                </div>
+              </Card>
+
+              {/* Humidity */}
+              <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Humidity</p>
+                    <p className="text-3xl font-bold text-gray-800">{sensorData.humidity}%</p>
+                  </div>
+                  <Droplets className="w-10 h-10 text-blue-500" />
+                </div>
+              </Card>
+
+              {/* Soil Moisture */}
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Soil Moisture</p>
+                    <p className="text-3xl font-bold text-gray-800">{sensorData.soilMoisture}%</p>
+                  </div>
+                  <Sprout className="w-10 h-10 text-green-500" />
+                </div>
+              </Card>
+
+              {/* pH Level */}
+              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">pH Level</p>
+                    <p className="text-3xl font-bold text-gray-800">{sensorData.pH}</p>
+                  </div>
+                  <FlaskConical className="w-10 h-10 text-purple-500" />
+                </div>
+              </Card>
+            </div>
+            
+            {lastUpdateTime && (
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                Last updated: {lastUpdateTime.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Critical Alerts */}
+        {alerts.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">🚨 Critical Alerts</h2>
             <div className="space-y-3">
-              {notifications.slice(0, 3).map((notification) => (
-                <Card
-                  key={notification._id}
-                  className={`cursor-pointer hover:shadow-lg transition ${
-                    notification.type === 'critical' ? 'border-l-4 border-red-500 bg-red-50' :
-                    notification.type === 'alert' ? 'border-l-4 border-orange-500 bg-orange-50' :
-                    notification.type === 'warning' ? 'border-l-4 border-yellow-500 bg-yellow-50' :
-                    notification.type === 'success' ? 'border-l-4 border-green-500 bg-green-50' :
-                    'border-l-4 border-blue-500 bg-blue-50'
+              {alerts.map((alert, index) => (
+                <Card 
+                  key={index} 
+                  className={`border-l-4 ${
+                    alert.type === 'critical' 
+                      ? 'border-red-500 bg-red-50' 
+                      : 'border-yellow-500 bg-yellow-50'
                   }`}
-                  onClick={() => navigate('/farmer/notifications')}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-800 mb-1">{notification.title}</h3>
-                      <p className="text-sm text-gray-700">{notification.message}</p>
+                  <div className="flex items-center gap-3">
+                    <div className={alert.type === 'critical' ? 'text-red-600' : 'text-yellow-600'}>
+                      {alert.icon}
                     </div>
-                    <Bell className="w-5 h-5 text-gray-500" />
+                    <p className={alert.type === 'critical' ? 'text-red-800 font-semibold' : 'text-yellow-800 font-semibold'}>
+                      {alert.message}
+                    </p>
                   </div>
                 </Card>
               ))}
@@ -348,121 +441,101 @@ const FarmerDashboard = () => {
           </div>
         )}
 
-        {/* Alerts */}
-        {alerts.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {alerts.map((alert, idx) => (
-              <div 
-                key={idx}
-                className={`p-4 rounded-lg flex items-center gap-3 ${
-                  alert.type === 'danger' ? 'bg-red-100 text-red-800' :
-                  alert.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}
-              >
-                <Bell className="w-5 h-5" />
-                <span className="font-medium">{alert.message}</span>
-                <button
-                  onClick={() => navigate('/farmer/find-labour')}
-                  className="ml-auto px-4 py-2 bg-white rounded-lg font-semibold hover:bg-gray-50 transition"
-                >
-                  Find Labour
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Live Sensor Data */}
+        {/* Fields Overview */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-800">Live Sensor Readings</h2>
-              {/* ESP32 Connection Status */}
-              {esp32Connected ? (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                  <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
-                  ESP32 Connected
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                  <div className="w-2 h-2 rounded-full bg-red-600" />
-                  ESP32 Not Connected
-                </div>
-              )}
-            </div>
-            <span className="text-sm text-gray-600">
-              {lastUpdateTime ? (
-                <span className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  Last update: {lastUpdateTime.toLocaleTimeString()}
-                </span>
-              ) : (
-                'Waiting for ESP32...'
-              )}
-            </span>
+            <h2 className="text-xl font-bold text-gray-800">🌾 My Fields</h2>
+            <button
+              onClick={() => navigate('/farmer/fields')}
+              className="px-4 py-2 text-green-600 hover:text-green-700 font-semibold flex items-center gap-2"
+            >
+              View All Fields
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
           
-          {esp32Connected && sensorData ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              <StatCard
-                icon={Thermometer}
-                label="Temperature"
-                value={`${sensorData.temperature.toFixed(1)}°C`}
-                color={sensorData.temperature > 35 ? 'red' : 'green'}
-              />
-              <StatCard
-                icon={Droplets}
-                label="Humidity"
-                value={`${sensorData.humidity.toFixed(1)}%`}
-                color={sensorData.humidity > 85 ? 'yellow' : 'blue'}
-              />
-              <StatCard
-                icon={Sprout}
-                label="Soil Moisture"
-                value={`${sensorData.soilMoisture.toFixed(1)}%`}
-                color={sensorData.soilMoisture < 30 ? 'red' : 'green'}
-              />
-              <StatCard
-                icon={CloudRain}
-                label="Rain Level"
-                value={`${(sensorData.rainLevel || 0).toFixed(0)}%`}
-                color={(sensorData.rainLevel || 0) > 50 ? 'blue' : 'gray'}
-              />
-              <StatCard
-                icon={FlaskConical}
-                label="pH Level"
-                value={sensorData.pH.toFixed(2)}
-                color={(sensorData.pH < 5.5 || sensorData.pH > 8.0) ? 'yellow' : 'green'}
-              />
-            </div>
-          ) : (
-            <Card className="p-12 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
-                  <Activity className="w-10 h-10 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">ESP32 Not Connected</h3>
-                  <p className="text-gray-600 mb-4">Please connect your ESP32 device to view live sensor data</p>
-                  <div className="bg-gray-50 rounded-lg p-4 text-left max-w-md mx-auto">
-                    <p className="text-sm text-gray-700 mb-2 font-semibold">Connection Steps:</p>
-                    <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                      <li>Power on your ESP32 device</li>
-                      <li>Ensure it's connected to WiFi</li>
-                      <li>Verify the server address in ESP32 code</li>
-                      <li>Check that sensor backend is running on port 3000</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
+          {fields.length === 0 ? (
+            <Card className="text-center py-12">
+              <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">No fields registered yet</h3>
+              <p className="text-gray-500 mb-4">Get started by adding your first field</p>
+              <button
+                onClick={() => navigate('/farmer/register-field')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Register Field
+              </button>
             </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {fields.slice(0, 3).map(field => (
+                <Card 
+                  key={field._id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/farmer/satellite-monitoring/${field._id}`)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-semibold text-gray-800">{field.name}</h3>
+                    {field.isCropLocked && (
+                      <Lock className="w-4 h-4 text-blue-600" />
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{field.areaHectares} hectares</span>
+                    </div>
+                    
+                    {field.cropType && (
+                      <div className="flex items-center gap-2">
+                        <Sprout className="w-4 h-4 text-green-600" />
+                        <span>{field.cropType}</span>
+                      </div>
+                    )}
+                    
+                    {field.isCropLocked && field.lockedCrop && (
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-blue-600" />
+                        <span className="text-blue-600 font-medium">Locked: {field.lockedCrop}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Registered: {new Date(field.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-gray-200 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/farmer/satellite-monitoring/${field._id}`);
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                    >
+                      Monitor
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/farmer/irrigation/${field._id}`);
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                    >
+                      Irrigation
+                    </button>
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">⚡ Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <button
               onClick={() => navigate('/farmer/find-labour')}
@@ -492,7 +565,7 @@ const FarmerDashboard = () => {
               onClick={() => navigate('/farmer/mandi-prices')}
               className="p-6 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition flex flex-col items-center gap-3"
             >
-              <ShoppingBag className="w-8 h-8" />
+              <TrendingUp className="w-8 h-8" />
               <span className="font-semibold">Mandi Prices</span>
             </button>
             
@@ -506,31 +579,17 @@ const FarmerDashboard = () => {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            icon={Bell}
-            label="Active Requests"
-            value={stats.activeRequests}
-            color="blue"
-          />
-          <StatCard
-            icon={Activity}
-            label="Alerts"
-            value={alerts.length}
-            color={alerts.length > 0 ? 'red' : 'green'}
-          />
-          <StatCard
-            icon={Sprout}
-            label="Farm Size"
-            value={`${user?.farmSize || 0} acres`}
-            color="green"
-          />
+        {/* Recent Activity */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">🕒 Recent Activity</h2>
+          <Card>
+            <div className="py-8 text-center">
+              <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">Recent activity will appear here</p>
+            </div>
+          </Card>
         </div>
       </div>
-      
-      {/* Voice Assistant */}
-      <VoiceAssistant />
     </div>
   );
 };

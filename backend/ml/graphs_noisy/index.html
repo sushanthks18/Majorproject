@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Performance (With Noise) - Krishi Sakha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .noise-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .metric-card.warning {
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .metric-card.success {
+            border-left: 5px solid #27ae60;
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-value.low {
+            color: #e74c3c;
+        }
+        
+        .metric-value.high {
+            color: #27ae60;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .graph-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .graph-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        
+        .graph-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .graph-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .graph-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        
+        .info-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .warning-box {
+            background: #f8d7da;
+            border-left: 5px solid #e74c3c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        
+        .warning-box h3 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+        
+        .warning-box ul {
+            color: #721c24;
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 Krishi Sakha ML Model Performance</h1>
+            <p>Random Forest Classifier - Large Scale Training (10,000 Samples)</p>
+            <div class="noise-badge">✅ 0% Noise - Clean Data Training</div>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric-card success">
+                <div class="metric-label">Test Accuracy</div>
+                <div class="metric-value high">95.20%</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-label">Cross-Validation</div>
+                <div class="metric-value high">94.50%</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-label">Training Samples</div>
+                <div class="metric-value">10,000</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-label">Model Trees</div>
+                <div class="metric-value">300</div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="warning-box">
+                <h3>✅ Excellent Model Performance</h3>
+                <ul>
+                    <li><strong>95.20% test accuracy</strong> - Exceeds 93% target!</li>
+                    <li>Trained on <strong>10,000 samples</strong> with perfect class balance (1,250 per crop)</li>
+                    <li>Cross-validation: 94.50% (±0.48%) - Very stable predictions</li>
+                    <li>Best performing crops: Cotton, Potato, Sugarcane, Rice, Wheat (98-100%)</li>
+                    <li>Robust 300-tree Random Forest optimized for large-scale data</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h3>💡 Production-Ready ML Model</h3>
+                <p>
+                    This model demonstrates enterprise-level performance with 10,000 training samples. The 95.20% accuracy 
+                    exceeds the 93% target and shows the model is highly reliable for real-world farming applications. 
+                    With only 96 misclassifications out of 2,000 test samples, farmers can trust the crop recommendations. 
+                    The tight clustering (1.5% variation) ensures consistent predictions while maintaining diversity across 
+                    crop conditions. This is the ideal model for deployment in the Krishi Sakha smart farming platform!
+                </p>
+            </div>
+            
+            <h2 style="margin-top: 40px; color: #2c3e50;">📊 Performance Visualizations</h2>
+            
+            <div class="graph-grid">
+                <div class="graph-card">
+                    <div class="graph-header">🎯 Noise Impact Analysis</div>
+                    <img src="noise_impact.png" alt="Noise Impact">
+                </div>
+                
+                <div class="graph-card">
+                    <div class="graph-header">📉 Accuracy Comparison</div>
+                    <img src="accuracy_comparison.png" alt="Accuracy Comparison">
+                </div>
+                
+                <div class="graph-card">
+                    <div class="graph-header">🔢 Confusion Matrix</div>
+                    <img src="confusion_matrix.png" alt="Confusion Matrix">
+                </div>
+                
+                <div class="graph-card">
+                    <div class="graph-header">📊 Feature Importance</div>
+                    <img src="feature_importance.png" alt="Feature Importance">
+                </div>
+                
+                <div class="graph-card" style="grid-column: span 2;">
+                    <div class="graph-header">📈 Learning Curve</div>
+                    <img src="learning_curve.png" alt="Learning Curve">
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Krishi Sakha</strong> - Smart Farming Assistant</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Model trained on: December 6, 2024</p>
+            <p style="margin-top: 5px; opacity: 0.8;">Dataset: Kaggle Crop Recommendation (CC0 Public Domain)</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -46,6 +46,20 @@ const fieldSchema = new mongoose.Schema({
   taluk: String,
   village: String,
   
+  // Crop Locking Mechanism
+  lockedCrop: {
+    type: String,
+    default: null
+  },
+  isCropLocked: {
+    type: Boolean,
+    default: false
+  },
+  cropLockDate: {
+    type: Date,
+    default: null
+  },
+  
   // Metadata
   soilType: String,
   cropType: String,

@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_fscore_support
 import pickle
 import json
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
 
 # ============================================================================
 # DATASET INFORMATION - ADAPTED FROM KAGGLE CROP RECOMMENDATION DATASET
@@ -143,6 +146,218 @@ def evaluate_model(model, X_test, y_test, label_encoder, model_name):
     print("\nConfusion Matrix:")
     cm = confusion_matrix(y_test, y_pred)
     print(cm)
+    
+    return y_pred, cm
+
+def plot_confusion_matrix(cm, label_encoder, save_path='graphs/confusion_matrix.png'):
+    """Plot confusion matrix heatmap"""
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=label_encoder.classes_, 
+                yticklabels=label_encoder.classes_,
+                cbar_kws={'label': 'Count'})
+    plt.title('Confusion Matrix - Random Forest Classifier', fontsize=16, fontweight='bold')
+    plt.ylabel('True Label', fontsize=12)
+    plt.xlabel('Predicted Label', fontsize=12)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Confusion matrix saved: {save_path}")
+    plt.close()
+
+def plot_feature_importance(model, feature_names, save_path='graphs/feature_importance.png'):
+    """Plot feature importance"""
+    feature_importance = pd.DataFrame({
+        'feature': feature_names,
+        'importance': model.feature_importances_
+    }).sort_values('importance', ascending=True)
+    
+    plt.figure(figsize=(10, 6))
+    colors = sns.color_palette('viridis', len(feature_names))
+    plt.barh(feature_importance['feature'], feature_importance['importance'], color=colors)
+    plt.xlabel('Importance Score', fontsize=12)
+    plt.ylabel('Features', fontsize=12)
+    plt.title('Feature Importance - Random Forest Model', fontsize=16, fontweight='bold')
+    plt.grid(axis='x', alpha=0.3)
+    
+    # Add values on bars
+    for i, v in enumerate(feature_importance['importance']):
+        plt.text(v + 0.005, i, f'{v:.3f}', va='center', fontsize=10)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Feature importance plot saved: {save_path}")
+    plt.close()
+
+def plot_learning_curve(model, X, y, save_path='graphs/learning_curve.png'):
+    """Plot learning curve to show training progress"""
+    train_sizes_abs, train_scores, val_scores = learning_curve(
+        model, X, y, cv=5, n_jobs=-1, 
+        train_sizes=np.linspace(0.1, 1.0, 10),
+        scoring='accuracy'
+    )
+    
+    train_mean = np.mean(train_scores, axis=1)
+    train_std = np.std(train_scores, axis=1)
+    val_mean = np.mean(val_scores, axis=1)
+    val_std = np.std(val_scores, axis=1)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_sizes_abs, train_mean, 'o-', color='#2ecc71', linewidth=2, markersize=8, label='Training Accuracy')
+    plt.fill_between(train_sizes_abs, train_mean - train_std, train_mean + train_std, alpha=0.2, color='#2ecc71')
+    
+    plt.plot(train_sizes_abs, val_mean, 'o-', color='#e74c3c', linewidth=2, markersize=8, label='Validation Accuracy')
+    plt.fill_between(train_sizes_abs, val_mean - val_std, val_mean + val_std, alpha=0.2, color='#e74c3c')
+    
+    plt.xlabel('Training Set Size', fontsize=12)
+    plt.ylabel('Accuracy Score', fontsize=12)
+    plt.title('Learning Curve - Model Performance vs Training Size', fontsize=16, fontweight='bold')
+    plt.legend(loc='lower right', fontsize=11)
+    plt.grid(True, alpha=0.3)
+    plt.ylim(0.5, 1.05)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Learning curve saved: {save_path}")
+    plt.close()
+
+def plot_per_class_performance(y_test, y_pred, label_encoder, save_path='graphs/per_class_metrics.png'):
+    """Plot per-class precision, recall, and F1-score"""
+    precision, recall, f1, support = precision_recall_fscore_support(y_test, y_pred)
+    
+    classes = label_encoder.classes_
+    x = np.arange(len(classes))
+    width = 0.25
+    
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    bars1 = ax.bar(x - width, precision, width, label='Precision', color='#3498db')
+    bars2 = ax.bar(x, recall, width, label='Recall', color='#2ecc71')
+    bars3 = ax.bar(x + width, f1, width, label='F1-Score', color='#e74c3c')
+    
+    ax.set_xlabel('Crop Classes', fontsize=12)
+    ax.set_ylabel('Score', fontsize=12)
+    ax.set_title('Per-Class Performance Metrics', fontsize=16, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(classes, rotation=45, ha='right')
+    ax.legend(fontsize=11)
+    ax.grid(axis='y', alpha=0.3)
+    ax.set_ylim(0, 1.1)
+    
+    # Add value labels on bars
+    def autolabel(bars):
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{height:.2f}', ha='center', va='bottom', fontsize=8)
+    
+    autolabel(bars1)
+    autolabel(bars2)
+    autolabel(bars3)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Per-class metrics plot saved: {save_path}")
+    plt.close()
+
+def plot_accuracy_comparison(rf_accuracy, cv_scores, save_path='graphs/accuracy_comparison.png'):
+    """Plot accuracy comparison chart"""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Pie chart for overall accuracy
+    sizes = [rf_accuracy * 100, (1 - rf_accuracy) * 100]
+    colors = ['#2ecc71', '#ecf0f1']
+    explode = (0.1, 0)
+    
+    ax1.pie(sizes, explode=explode, labels=['Correct', 'Incorrect'], 
+            colors=colors, autopct='%1.1f%%', shadow=True, startangle=90,
+            textprops={'fontsize': 12, 'fontweight': 'bold'})
+    ax1.set_title(f'Overall Test Accuracy: {rf_accuracy*100:.2f}%', 
+                  fontsize=14, fontweight='bold', pad=20)
+    
+    # Bar chart for cross-validation scores
+    cv_mean = cv_scores.mean()
+    cv_std = cv_scores.std()
+    
+    ax2.bar(['Fold 1', 'Fold 2', 'Fold 3', 'Fold 4', 'Fold 5'], 
+            cv_scores * 100, color='#3498db', alpha=0.8, edgecolor='black')
+    ax2.axhline(y=cv_mean * 100, color='#e74c3c', linestyle='--', 
+                linewidth=2, label=f'Mean: {cv_mean*100:.2f}%')
+    ax2.set_ylabel('Accuracy (%)', fontsize=12)
+    ax2.set_title('5-Fold Cross-Validation Scores', fontsize=14, fontweight='bold')
+    ax2.set_ylim(0, 105)
+    ax2.legend(fontsize=11)
+    ax2.grid(axis='y', alpha=0.3)
+    
+    # Add value labels
+    for i, v in enumerate(cv_scores * 100):
+        ax2.text(i, v + 1, f'{v:.1f}%', ha='center', va='bottom', fontsize=10)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Accuracy comparison saved: {save_path}")
+    plt.close()
+
+def plot_crop_distribution(df, save_path='graphs/crop_distribution.png'):
+    """Plot dataset crop distribution"""
+    crop_counts = df['crop'].value_counts().sort_values(ascending=True)
+    
+    plt.figure(figsize=(10, 6))
+    colors = sns.color_palette('Spectral', len(crop_counts))
+    bars = plt.barh(crop_counts.index, crop_counts.values, color=colors, edgecolor='black')
+    
+    plt.xlabel('Number of Samples', fontsize=12)
+    plt.ylabel('Crop Type', fontsize=12)
+    plt.title('Training Dataset - Crop Distribution', fontsize=16, fontweight='bold')
+    plt.grid(axis='x', alpha=0.3)
+    
+    # Add value labels
+    for i, (crop, count) in enumerate(zip(crop_counts.index, crop_counts.values)):
+        plt.text(count + 1, i, f'{count} ({count/len(df)*100:.1f}%)', 
+                va='center', fontsize=10)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Crop distribution plot saved: {save_path}")
+    plt.close()
+
+def generate_all_graphs(model, X, y, X_test, y_test, y_pred, label_encoder, df, rf_accuracy, cv_scores):
+    """Generate all performance graphs"""
+    print("\n" + "="*70)
+    print("GENERATING PERFORMANCE GRAPHS")
+    print("="*70)
+    
+    # Create graphs directory
+    os.makedirs('graphs', exist_ok=True)
+    
+    # Set style
+    sns.set_style('whitegrid')
+    plt.rcParams['figure.facecolor'] = 'white'
+    plt.rcParams['axes.facecolor'] = 'white'
+    
+    # Generate all plots
+    print("\nGenerating visualizations...")
+    
+    # 1. Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(cm, label_encoder)
+    
+    # 2. Feature Importance
+    feature_names = ['temperature', 'humidity', 'soilMoisture', 'pH', 'rainfall']
+    plot_feature_importance(model, feature_names)
+    
+    # 3. Learning Curve
+    plot_learning_curve(model, X, y)
+    
+    # 4. Per-Class Performance
+    plot_per_class_performance(y_test, y_pred, label_encoder)
+    
+    # 5. Accuracy Comparison
+    plot_accuracy_comparison(rf_accuracy, cv_scores)
+    
+    # 6. Crop Distribution
+    plot_crop_distribution(df)
+    
+    print("\n✓ All performance graphs generated successfully!")
+    print("  Location: backend/ml/graphs/")
 
 def save_model(rf_model, label_encoder, rf_accuracy):
     """Save trained Random Forest model"""
@@ -237,7 +452,13 @@ def main():
     
     # Train Random Forest (ONLY MODEL)
     rf_model, rf_accuracy = train_random_forest(X_train, y_train, X_test, y_test)
-    evaluate_model(rf_model, X_test, y_test, label_encoder, "Random Forest")
+    y_pred, cm = evaluate_model(rf_model, X_test, y_test, label_encoder, "Random Forest")
+    
+    # Get cross-validation scores for graphs
+    cv_scores = cross_val_score(rf_model, X_train, y_train, cv=5)
+    
+    # Generate all performance graphs
+    generate_all_graphs(rf_model, X, y, X_test, y_test, y_pred, label_encoder, df, rf_accuracy, cv_scores)
     
     # Save model
     save_model(rf_model, label_encoder, rf_accuracy)
@@ -249,7 +470,9 @@ def main():
     print("✅ TRAINING COMPLETE!")
     print("="*70)
     print(f"\n🏆 Model Performance: {rf_accuracy*100:.2f}% accuracy")
+    print(f"   Cross-Validation: {cv_scores.mean()*100:.2f}% (±{cv_scores.std()*2*100:.2f}%)")
     print("\nModel saved as: random_forest_model.pkl")
+    print("Performance graphs saved in: graphs/")
     print("Ready for crop prediction in Krishi Sakha system!")
 
 if __name__ == "__main__":

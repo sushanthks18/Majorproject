@@ -20,6 +20,7 @@ import satelliteRoutes from './routes/satellite.js';
 import irrigationRoutes from './routes/irrigation.js';
 import assistantRoutes from './routes/assistant.js';
 import cropPlanRoutes from './routes/cropPlans.js';
+import cropRoutes from './routes/crops.js'; // 🆕 NEW: Crop Frequency Insight
 
 dotenv.config();
 
@@ -75,6 +76,7 @@ app.use('/api/satellite', satelliteRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/crop-plans', cropPlanRoutes);
+app.use('/api/crops', cropRoutes); // 🆕 NEW: Crop Frequency Insight
 
 // Health check
 app.get('/', (req, res) => {

@@ -244,4 +244,169 @@ router.delete('/:planId', authenticateFarmer, async (req, res) => {
   }
 });
 
+// ==========================================
+// 🆕 NEW FEATURE: Crop Frequency Insight
+// ==========================================
+// Get crop frequency statistics across all farmers
+router.get('/crop-frequency/:cropName', authenticate, async (req, res) => {
+  try {
+    const { cropName } = req.params;
+    const { district, taluk } = req.query;
+
+    console.log(`\n📊 [Crop Frequency Insight] Analyzing: ${cropName}`);
+
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    // Determine current season
+    let currentSeason = 'year-round';
+    if (currentMonth >= 6 && currentMonth <= 10) {
+      currentSeason = 'kharif';  // June-Oct
+    } else if (currentMonth >= 10 || currentMonth <= 3) {
+      currentSeason = 'rabi';    // Nov-Mar
+    } else {
+      currentSeason = 'zaid';    // Apr-May
+    }
+
+    // Build query - get all active crop plans for current season/year
+    const baseQuery = {
+      year: currentYear,
+      season: { $in: [currentSeason, 'year-round'] },
+      status: { $in: ['planned', 'sowing', 'growing'] }
+    };
+
+    // Add regional filters if provided
+    if (district) {
+      baseQuery['region.district'] = district;
+    }
+    if (taluk) {
+      baseQuery['region.taluk'] = taluk;
+    }
+
+    // Get all crop plans in the region
+    const allCropPlans = await CropPlan.find(baseQuery);
+    const totalFarmers = new Set(allCropPlans.map(plan => plan.farmerId.toString())).size;
+
+    // Get farmers planning to grow this specific crop
+    const sameCropQuery = { ...baseQuery, selectedCrop: cropName };
+    const sameCropPlans = await CropPlan.find(sameCropQuery);
+    const farmersWithSameCrop = new Set(sameCropPlans.map(plan => plan.farmerId.toString())).size;
+
+    // Calculate percentage
+    const frequencyPercentage = totalFarmers > 0 
+      ? parseFloat(((farmersWithSameCrop / totalFarmers) * 100).toFixed(2))
+      : 0;
+
+    // Determine trend description and risk level
+    // IMPORTANT: Only show high risk when there's meaningful competition (multiple farmers)
+    let trendDescription = '';
+    let riskLevel = 'low';  // low, medium, high
+    let insight = '';
+    let recommendation = '';
+    let colorCode = 'green';  // green, yellow, red
+
+    // If there are very few farmers total (< 5), there's no real competition yet
+    if (totalFarmers < 5) {
+      trendDescription = 'Low Competition';
+      riskLevel = 'low';
+      insight = '✅ Low competition — good market opportunity!';
+      recommendation = 'Limited farmers in the region currently. Good time to establish your crop.';
+      colorCode = 'green';
+    }
+    // Very High Risk: ≥50% of farmers growing same crop AND at least 5 total farmers
+    else if (frequencyPercentage >= 50 && totalFarmers >= 5) {
+      trendDescription = 'Very High Competition';
+      riskLevel = 'high';
+      insight = '⚠️ High demand crop — many farmers are planning to grow this.';
+      recommendation = 'Risk of market oversupply — consider diversification to other crops for better market opportunity.';
+      colorCode = 'red';
+    }
+    // High Risk: 35-49% of farmers
+    else if (frequencyPercentage >= 35) {
+      trendDescription = 'High Competition';
+      riskLevel = 'high';
+      insight = '⚠️ Popular crop in your region — significant competition expected.';
+      recommendation = 'Moderate oversupply risk — monitor market prices and consider alternative crops.';
+      colorCode = 'orange';
+    }
+    // Medium Risk: 25-34% of farmers
+    else if (frequencyPercentage >= 25) {
+      trendDescription = 'Moderate Competition';
+      riskLevel = 'medium';
+      insight = '📊 Moderately popular crop — balanced supply expected.';
+      recommendation = 'Healthy competition level — proceed with standard market monitoring.';
+      colorCode = 'yellow';
+    }
+    // Low Risk: <25% of farmers
+    else {
+      trendDescription = 'Low Competition';
+      riskLevel = 'low';
+      insight = '🌟 Low competition — good market opportunity!';
+      recommendation = 'Favorable market conditions — limited regional supply may lead to better prices.';
+      colorCode = 'green';
+    }
+
+    // Calculate total area being used for this crop
+    const totalAreaForCrop = sameCropPlans.reduce((sum, plan) => sum + (plan.areaHectares || 0), 0);
+    const totalAreaAll = allCropPlans.reduce((sum, plan) => sum + (plan.areaHectares || 0), 0);
+    const areaPercentage = totalAreaAll > 0 
+      ? parseFloat(((totalAreaForCrop / totalAreaAll) * 100).toFixed(2))
+      : 0;
+
+    // Get top competing crops in the region
+    const cropCounts = {};
+    allCropPlans.forEach(plan => {
+      cropCounts[plan.selectedCrop] = (cropCounts[plan.selectedCrop] || 0) + 1;
+    });
+
+    const topCrops = Object.entries(cropCounts)
+      .map(([crop, count]) => ({
+        crop,
+        farmers: count,
+        percentage: parseFloat(((count / totalFarmers) * 100).toFixed(2))
+      }))
+      .sort((a, b) => b.farmers - a.farmers)
+      .slice(0, 5);
+
+    const response = {
+      cropName,
+      region: {
+        district: district || 'All districts',
+        taluk: taluk || 'All taluks'
+      },
+      season: currentSeason,
+      year: currentYear,
+      statistics: {
+        totalFarmers,
+        farmersWithSameCrop,
+        frequencyPercentage,
+        totalAreaForCrop: parseFloat(totalAreaForCrop.toFixed(2)),
+        areaPercentage
+      },
+      insight: {
+        trendDescription,
+        riskLevel,
+        insight,
+        recommendation,
+        colorCode
+      },
+      topCompetingCrops: topCrops,
+      timestamp: new Date()
+    };
+
+    console.log('✅ Crop frequency analysis completed:', {
+      crop: cropName,
+      farmers: farmersWithSameCrop,
+      total: totalFarmers,
+      percentage: frequencyPercentage + '%',
+      risk: riskLevel
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('Crop frequency insight error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 export default router;

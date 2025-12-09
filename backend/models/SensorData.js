@@ -21,6 +21,10 @@ const sensorDataSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  rainfall: {
+    type: Number,
+    default: 0
+  },
   rainLevel: {
     type: Number,
     default: 0

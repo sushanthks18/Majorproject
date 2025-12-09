@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Satellite, MapPin, TrendingUp, AlertTriangle, CheckCircle, Loader, Map as MapIconLucide } from 'lucide-react';
+import { Satellite, MapPin, TrendingUp, AlertTriangle, CheckCircle, Loader, Map as MapIconLucide, ArrowLeft, Lock } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Navbar from '../../components/Navbar';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
@@ -220,18 +221,37 @@ function SatelliteMonitoring() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar role="farmer" />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="mb-6">
+          <button
+            onClick={() => navigate('/farmer/fields')}
+            className="flex items-center gap-2 text-green-600 hover:text-green-700 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Fields
+          </button>
+          
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">{field.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">{field?.name}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>Area: {field.areaHectares} hectares</span>
-                {field.cropType && <span>• Crop: {field.cropType}</span>}
-                {field.soilType && <span>• Soil: {field.soilType}</span>}
+                <span>Area: {field?.areaHectares} hectares</span>
+                {field?.cropType && <span>• Crop: {field?.cropType}</span>}
+                {field?.soilType && <span>• Soil: {field?.soilType}</span>}
               </div>
+              {/* Display locked crop info if exists */}
+              {field?.isCropLocked && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-600">
+                    Locked Crop: {field?.lockedCrop} (since {new Date(field?.cropLockDate).toLocaleDateString()})
+                  </span>
+                </div>
+              )}
             </div>
             
             <button

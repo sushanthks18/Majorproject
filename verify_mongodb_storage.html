@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Storage Verification</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-send {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-send:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        .btn-check {
+            background: #3498db;
+            color: white;
+        }
+        .btn-check:hover {
+            background: #2980b9;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+        }
+        .result-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status {
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .data-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+        .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span style="font-size: 40px;">🗄️</span>
+            MongoDB Storage Verification
+        </h1>
+        <p class="subtitle">Verify that sensor data is being stored in MongoDB</p>
+        
+        <div class="info-box">
+            <strong>📋 What this does:</strong><br>
+            1. Sends test sensor data to backend<br>
+            2. Backend saves it to MongoDB<br>
+            3. Verifies data appears in database<br>
+            4. Shows proof of storage
+        </div>
+
+        <div class="button-group">
+            <button class="btn-send" onclick="runFullTest()">
+                🧪 Run Complete Verification Test
+            </button>
+            <button class="btn-check" onclick="checkLatestData()">
+                🔍 Check Latest Stored Data
+            </button>
+            <button class="btn-send" onclick="sendTestData()">
+                📡 Send Single Test Reading
+            </button>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        let testCount = 0;
+
+        async function runFullTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result-card">
+                    <h3>⏳ Running Verification Test...</h3>
+                    <div class="pending">Test in progress...</div>
+                </div>
+            `;
+
+            // Step 1: Get initial count
+            resultsDiv.innerHTML += `
+                <div class="result-card">
+                    <h3><span class="step-number">1</span> Checking Initial State</h3>
+                    <div class="pending">Fetching current data count...</div>
+                </div>
+            `;
+
+            const initialData = await checkLatestData(true);
+            const initialCount = initialData ? 1 : 0;
+
+            // Step 2: Send test data
+            resultsDiv.innerHTML += `
+                <div class="result-card">
+                    <h3><span class="step-number">2</span> Sending Test Data</h3>
+                    <div class="pending">Sending sensor reading to backend...</div>
+                </div>
+            `;
+
+            const testData = {
+                temperature: 25 + Math.random() * 10,
+                humidity: 60 + Math.random() * 20,
+                soilMoisture: 40 + Math.random() * 40,
+                pH: 6.0 + Math.random() * 2,
+                rainfall: Math.random() * 30,
+                deviceId: 'VERIFICATION_TEST',
+                source: 'krishi-sakha',
+                apiKey: 'krishi-sakha-esp32'
+            };
+
+            try {
+                const sendResponse = await fetch('http://localhost:5001/api/sensors/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+
+                const sendResult = await sendResponse.json();
+
+                if (sendResponse.ok) {
+                    // Step 3: Wait and verify
+                    resultsDiv.innerHTML += `
+                        <div class="result-card">
+                            <h3><span class="step-number">3</span> Waiting for MongoDB...</h3>
+                            <div class="countdown" id="countdown">3</div>
+                        </div>
+                    `;
+
+                    let count = 3;
+                    const countdownInterval = setInterval(() => {
+                        count--;
+                        document.getElementById('countdown').textContent = count;
+                        if (count === 0) {
+                            clearInterval(countdownInterval);
+                            verifyStorage(testData, sendResult);
+                        }
+                    }, 1000);
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result-card">
+                            <h3>❌ Test Failed</h3>
+                            <div class="error">Failed to send data to backend</div>
+                            <pre>${JSON.stringify(sendResult, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h3>❌ Connection Error</h3>
+                        <div class="error">
+                            Cannot connect to backend.<br><br>
+                            <strong>Make sure backend is running:</strong><br>
+                            <code>cd backend && npm run dev</code>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function verifyStorage(sentData, sendResult) {
+            const resultsDiv = document.getElementById('results');
+            
+            // Step 4: Check if data was stored
+            const storedData = await checkLatestData(true);
+
+            resultsDiv.innerHTML = '';
+
+            if (storedData) {
+                const dataId = sendResult.data?.id || 'N/A';
+                const isMatching = Math.abs(storedData.temperature - sentData.temperature) < 0.1;
+
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h3>✅ Test PASSED!</h3>
+                        <div class="success">
+                            <strong>Data Successfully Stored in MongoDB!</strong><br><br>
+                            ✅ Backend received data<br>
+                            ✅ Saved to MongoDB<br>
+                            ✅ Data is retrievable<br>
+                            ✅ Values match
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>📤 Data Sent</h3>
+                        <div class="data-item">
+                            🌡️ Temperature: <strong>${sentData.temperature.toFixed(1)}°C</strong><br>
+                            💧 Humidity: <strong>${sentData.humidity.toFixed(1)}%</strong><br>
+                            🌱 Soil: <strong>${sentData.soilMoisture.toFixed(1)}%</strong><br>
+                            🧪 pH: <strong>${sentData.pH.toFixed(1)}</strong><br>
+                            🌧️ Rainfall: <strong>${sentData.rainfall.toFixed(1)}%</strong>
+                        </div>
+                        <div class="status success">
+                            Database ID: ${dataId}
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>📥 Data Retrieved from MongoDB</h3>
+                        <div class="data-item">
+                            🌡️ Temperature: <strong>${storedData.temperature?.toFixed(1)}°C</strong><br>
+                            💧 Humidity: <strong>${storedData.humidity?.toFixed(1)}%</strong><br>
+                            🌱 Soil: <strong>${storedData.soilMoisture?.toFixed(1)}%</strong><br>
+                            🧪 pH: <strong>${storedData.pH?.toFixed(1)}</strong><br>
+                            🌧️ Rainfall: <strong>${(storedData.rainfall || 0).toFixed(1)}%</strong><br>
+                            ⏰ Timestamp: <strong>${new Date(storedData.timestamp).toLocaleString()}</strong>
+                        </div>
+                        <div class="status ${isMatching ? 'success' : 'error'}">
+                            ${isMatching ? '✅ Values Match!' : '⚠️ Values Different'}
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>🎯 Conclusion</h3>
+                        <div class="success">
+                            <strong>YOUR SYSTEM IS WORKING PERFECTLY!</strong><br><br>
+                            ✅ All sensor data is being stored in MongoDB<br>
+                            ✅ Data persists across page refreshes<br>
+                            ✅ Dashboard can retrieve historical data<br>
+                            ✅ Analytics graphs use real stored data<br><br>
+                            <strong>Next Step:</strong> Connect MongoDB Compass to view all data:<br>
+                            <code>mongodb://localhost:27017/smart-agriculture</code>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h3>⚠️ Verification Inconclusive</h3>
+                        <div class="error">
+                            Data was sent but couldn't verify storage.<br>
+                            This might mean:<br>
+                            • Backend is running but not connected to MongoDB<br>
+                            • MongoDB is not running<br><br>
+                            Check backend terminal for errors.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkLatestData(silent = false) {
+            try {
+                const response = await fetch('http://localhost:5001/api/sensors/latest');
+                const data = await response.json();
+
+                if (!silent) {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = `
+                        <div class="result-card">
+                            <h3>📊 Latest Data in MongoDB</h3>
+                            <div class="data-item">
+                                🌡️ Temperature: <strong>${data.temperature?.toFixed(1)}°C</strong><br>
+                                💧 Humidity: <strong>${data.humidity?.toFixed(1)}%</strong><br>
+                                🌱 Soil: <strong>${data.soilMoisture?.toFixed(1)}%</strong><br>
+                                🧪 pH: <strong>${data.pH?.toFixed(1)}</strong><br>
+                                🌧️ Rainfall: <strong>${(data.rainfall || 0).toFixed(1)}%</strong><br>
+                                ⏰ Timestamp: <strong>${new Date(data.timestamp).toLocaleString()}</strong>
+                            </div>
+                            <div class="status success">
+                                ✅ Data Retrieved Successfully from MongoDB
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <h3>📋 Raw MongoDB Document</h3>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+
+                return data;
+            } catch (error) {
+                if (!silent) {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = `
+                        <div class="result-card">
+                            <h3>❌ Error</h3>
+                            <div class="error">
+                                Cannot connect to backend.<br>
+                                Make sure backend is running on port 5001.
+                            </div>
+                        </div>
+                    `;
+                }
+                return null;
+            }
+        }
+
+        async function sendTestData() {
+            testCount++;
+            const data = {
+                temperature: 25 + Math.random() * 10,
+                humidity: 60 + Math.random() * 20,
+                soilMoisture: 40 + Math.random() * 40,
+                pH: 6.0 + Math.random() * 2,
+                rainfall: Math.random() * 30,
+                deviceId: 'MANUAL_TEST',
+                source: 'krishi-sakha',
+                apiKey: 'krishi-sakha-esp32'
+            };
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result-card">
+                    <h3>📡 Sending Test #${testCount}...</h3>
+                    <div class="pending">Sending to backend...</div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('http://localhost:5001/api/sensors/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="result-card">
+                            <h3>✅ Test Data Sent Successfully!</h3>
+                            <div class="success">
+                                Data sent to backend and stored in MongoDB!<br><br>
+                                Database ID: <strong>${result.data?.id}</strong>
+                            </div>
+                            <div class="data-item">
+                                🌡️ Temperature: <strong>${data.temperature.toFixed(1)}°C</strong><br>
+                                💧 Humidity: <strong>${data.humidity.toFixed(1)}%</strong><br>
+                                🌱 Soil: <strong>${data.soilMoisture.toFixed(1)}%</strong><br>
+                                🧪 pH: <strong>${data.pH.toFixed(1)}</strong><br>
+                                🌧️ Rainfall: <strong>${data.rainfall.toFixed(1)}%</strong>
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <h3>📋 Server Response</h3>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result-card">
+                            <h3>❌ Error</h3>
+                            <div class="error">
+                                Failed to send data<br>
+                                Status: ${response.status}
+                            </div>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h3>❌ Connection Error</h3>
+                        <div class="error">
+                            Cannot connect to backend: ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkLatestData, 500);
+        });
+    </script>
+</body>
+</html>

@@ -4,13 +4,11 @@ import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get latest sensor reading
-router.get('/latest', authenticate, async (req, res) => {
+// Get latest sensor reading (Public endpoint - no auth required for ESP32)
+router.get('/latest', async (req, res) => {
   try {
-    const farmerId = req.user.role === 'farmer' ? req.userId : null;
-    
-    const query = farmerId ? { farmerId } : {};
-    const latestData = await SensorData.findOne(query).sort({ timestamp: -1 });
+    // Get the most recent sensor data from ANY source
+    const latestData = await SensorData.findOne().sort({ timestamp: -1 });
 
     if (!latestData) {
       // Return default/simulated data instead of 404
@@ -20,15 +18,17 @@ router.get('/latest', authenticate, async (req, res) => {
           humidity: 60,
           soilMoisture: 45,
           pH: 7.0,
-          rainLevel: 0,
+          rainfall: 0,
           timestamp: new Date(),
-          _id: null
+          _id: null,
+          source: 'default'
         },
         message: 'No sensor data available. Showing default values.'
       });
     }
 
-    res.json({ data: latestData });
+    // Return the data directly (not nested)
+    res.json(latestData);
   } catch (error) {
     console.error('Error fetching latest sensor data:', error);
     res.status(500).json({ error: 'Server error' });
@@ -38,7 +38,7 @@ router.get('/latest', authenticate, async (req, res) => {
 // Get historical data
 router.get('/history', authenticate, async (req, res) => {
   try {
-    const { hours = 24 } = req.query;
+    const { hours = 24, limit } = req.query;
     const farmerId = req.user.role === 'farmer' ? req.userId : null;
 
     const timeAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
@@ -51,14 +51,28 @@ router.get('/history', authenticate, async (req, res) => {
       query.farmerId = farmerId;
     }
 
-    const data = await SensorData.find(query)
-      .sort({ timestamp: 1 })
-      .limit(1000);
+    let dataQuery = SensorData.find(query)
+      .sort({ timestamp: -1 });  // Sort newest first for limit
+    
+    // If limit is specified (for real-time mode), apply it
+    if (limit) {
+      dataQuery = dataQuery.limit(parseInt(limit));
+    } else {
+      dataQuery = dataQuery.limit(1000);
+    }
+    
+    const data = await dataQuery;
+    
+    // Reverse to oldest first for charts (if limit was used)
+    const sortedData = limit ? data.reverse() : data.sort((a, b) => 
+      new Date(a.timestamp) - new Date(b.timestamp)
+    );
 
     res.json({ 
-      data,
-      count: data.length,
-      hours: parseInt(hours)
+      data: sortedData,
+      count: sortedData.length,
+      hours: parseInt(hours),
+      limit: limit ? parseInt(limit) : null
     });
   } catch (error) {
     console.error('Error fetching sensor history:', error);
@@ -69,69 +83,93 @@ router.get('/history', authenticate, async (req, res) => {
 // Store sensor data (Public endpoint for IoT devices - ESP32 compatible)
 router.post('/data', async (req, res) => {
   try {
-    let { temperature, humidity, soilMoisture, pH, farmerId, deviceId, apiKey, rainLevel } = req.body;
+    let { temperature, humidity, soilMoisture, pH, farmerId, deviceId, apiKey, rainLevel, rainfall, source } = req.body;
 
-    // Handle ESP32 format (rainLevel instead of pH if pH not provided)
-    if (!pH && rainLevel !== undefined) {
-      // If pH is missing but rainLevel exists, use default pH
-      pH = 7.0; // Default pH value
+    console.log('\n📥 [SENSOR DATA RECEIVED]');
+    console.log('Raw data:', JSON.stringify(req.body, null, 2));
+
+    // Handle both rainLevel and rainfall
+    const rain = rainfall !== undefined ? rainfall : (rainLevel !== undefined ? rainLevel : 0);
+    
+    // Use default pH if not provided
+    if (pH === undefined || pH === null) {
+      pH = 7.0;
+      console.log('⚠️  pH not provided, using default: 7.0');
     }
 
     // Basic validation
     if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ error: 'Missing required sensor data fields (temperature, humidity, soilMoisture)' });
     }
 
-    // Convert to numbers
+    // Convert to numbers and validate
     temperature = parseFloat(temperature);
     humidity = parseFloat(humidity);
     soilMoisture = parseFloat(soilMoisture);
-    pH = parseFloat(pH || 7.0);
+    pH = parseFloat(pH);
+    const rainfallValue = parseFloat(rain);
 
-    // Optional: Validate API key for security
-    // if (apiKey !== process.env.SENSOR_API_KEY) {
-    //   return res.status(401).json({ error: 'Invalid API key' });
-    // }
+    if (isNaN(temperature) || isNaN(humidity) || isNaN(soilMoisture) || isNaN(pH)) {
+      console.log('❌ Invalid number format');
+      return res.status(400).json({ error: 'Invalid number format in sensor data' });
+    }
+
+    console.log('✅ Validated data:', { temperature, humidity, soilMoisture, pH, rainfall: rainfallValue });
 
     const sensorData = new SensorData({
       temperature,
       humidity,
       soilMoisture,
       pH,
-      rainLevel: parseFloat(rainLevel || 0),
+      rainfall: rainfallValue,
       farmerId: farmerId || null,
       timestamp: new Date()
     });
 
     await sensorData.save();
+    console.log('💾 Saved to database with ID:', sensorData._id);
 
     // Emit to connected clients via Socket.io
     const io = req.app.get('io') || global.io;
     if (io) {
       // Create ESP32-tagged data for frontend
       const esp32Data = {
-        ...sensorData.toObject(),
-        deviceId: deviceId || 'ESP32_001',
-        source: req.body.source || 'krishi-sakha'
+        temperature,
+        humidity,
+        soilMoisture,
+        pH,
+        rainfall: rainfallValue,
+        deviceId: deviceId || 'ESP32_SENSOR_001',
+        source: source || 'krishi-sakha',
+        timestamp: sensorData.timestamp,
+        _id: sensorData._id
       };
       
-      // Broadcast to all connected clients
+      console.log('📡 Broadcasting to frontend:', esp32Data);
+      
+      // Broadcast to ALL connected clients
       io.emit('sensorUpdate', esp32Data);
       
-      // Send to specific farmer if farmerId provided
-      if (farmerId) {
-        io.to(farmerId).emit('sensorUpdate', esp32Data);
-      }
-      
-      console.log(`✅ [ESP32 DATA] Temp: ${temperature}°C, Humidity: ${humidity}%, Soil: ${soilMoisture}%, pH: ${pH}, Rain: ${rainLevel || 0}%`);
-      console.log(`📡 Broadcasting to frontend with deviceId: ${deviceId || 'ESP32_001'}`);
+      console.log(`✅ [ESP32 DATA] Temp: ${temperature}°C, Humidity: ${humidity}%, Soil: ${soilMoisture}%, pH: ${pH}, Rain: ${rainfallValue}%`);
+      console.log(`📡 Broadcasted with deviceId: ${esp32Data.deviceId}, source: ${esp32Data.source}`);
+    } else {
+      console.log('⚠️  Socket.IO not available');
     }
 
     res.status(201).json({ 
       success: true,
-      message: 'Sensor data saved',
-      data: sensorData,
-      received_data: req.body // Echo back for ESP32 confirmation
+      message: 'Sensor data saved and broadcasted',
+      data: {
+        id: sensorData._id,
+        temperature,
+        humidity,
+        soilMoisture,
+        pH,
+        rainfall: rainfallValue,
+        timestamp: sensorData.timestamp
+      },
+      received: req.body
     });
   } catch (error) {
     console.error('❌ Error saving sensor data:', error);

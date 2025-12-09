@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Card from '../../components/Card';
 import Loading from '../../components/Loading';
-import { Sprout, TrendingUp, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Sprout, TrendingUp, AlertTriangle, CheckCircle, Info, Lock, Unlock } from 'lucide-react';
 import api from '../../utils/api';
 import { getSocket } from '../../utils/socket';
 import toast from 'react-hot-toast';
@@ -15,6 +15,10 @@ const CropRecommendation = () => {
   const [fields, setFields] = useState([]);
   const [selectedField, setSelectedField] = useState(null);
   const [savingPlan, setSavingPlan] = useState(false);
+  const [showUnlockConfirmation, setShowUnlockConfirmation] = useState(false);
+  // 🆕 NEW: Crop Frequency Insight states
+  const [cropFrequency, setCropFrequency] = useState(null);
+  const [loadingFrequency, setLoadingFrequency] = useState(false);
 
   useEffect(() => {
     fetchSensorData();
@@ -39,13 +43,20 @@ const CropRecommendation = () => {
 
   const fetchSensorData = async () => {
     try {
+      setInitialLoading(true);
       const response = await api.get('/sensors/latest');
-      if (response.data && response.data.data) {
-        setSensorData(response.data.data);
+      console.log('Crop Recommendation - Sensor data:', response.data);
+      
+      // Handle direct data (no nesting)
+      const data = response.data;
+      
+      if (data && data.temperature !== undefined) {
+        setSensorData(data);
+        console.log('✅ Using live sensor data for prediction');
       }
     } catch (error) {
-      console.error('Sensor data fetch error:', error);
-      // Don't show error toast, data will come via socket
+      console.error('Sensor data error:', error);
+      toast.error('Could not fetch sensor data');
     } finally {
       setInitialLoading(false);
     }
@@ -54,14 +65,13 @@ const CropRecommendation = () => {
   const fetchFields = async () => {
     try {
       const response = await api.get('/fields');
-      if (response.data && response.data.fields) {
-        setFields(response.data.fields);
-        if (response.data.fields.length > 0) {
-          setSelectedField(response.data.fields[0]._id);
-        }
+      setFields(response.data);
+      if (response.data.length > 0 && !selectedField) {
+        setSelectedField(response.data[0]._id);
       }
     } catch (error) {
-      console.error('Fields fetch error:', error);
+      console.error('Fields error:', error);
+      toast.error('Could not fetch fields');
     }
   };
 
@@ -86,8 +96,18 @@ const CropRecommendation = () => {
       const response = await api.post('/predict/crop', payload);
       
       if (response.data) {
-        setRecommendation(response.data);
-        toast.success('Market-aware recommendation generated!');
+        if (response.data.recommendationDisabled) {
+          // Field has a locked crop
+          toast.success(`Crop is locked: ${response.data.lockedCrop}`);
+        } else {
+          setRecommendation(response.data);
+          toast.success('Market-aware recommendation generated!');
+          
+          // 🆕 NEW: Fetch crop frequency insight for recommended crop
+          if (response.data.recommendedCrop) {
+            fetchCropFrequency(response.data.recommendedCrop);
+          }
+        }
       } else {
         toast.error('No recommendation received');
       }
@@ -104,47 +124,112 @@ const CropRecommendation = () => {
       toast.error('Please select a field first');
       return;
     }
-
+    
     try {
       setSavingPlan(true);
       
-      // Determine current season
-      const currentMonth = new Date().getMonth();
-      let season = 'year-round';
-      if (currentMonth >= 6 && currentMonth <= 10) {
-        season = 'kharif';
-      } else if (currentMonth >= 10 || currentMonth <= 3) {
-        season = 'rabi';
-      } else {
-        season = 'zaid';
-      }
-
-      const payload = {
+      // Save to crop plans collection
+      const planResponse = await api.post('/crop-plans', {
         fieldId: selectedField,
-        selectedCrop: crop.name,
-        season,
-        profitabilityScore: crop.profitability_score || crop.suitability_score
-      };
-
-      const response = await api.post('/crop-plans', payload);
+        selectedCrop: crop.name || crop,
+        season: getCurrentSeason()
+      });
       
-      if (response.data) {
-        toast.success(`${crop.name} added to your crop plan!`);
+      // Lock the crop for the field
+      const lockResponse = await api.post(`/predict/lock-crop/${selectedField}`, {
+        selectedCrop: crop.name || crop
+      });
+      
+      if (planResponse.data && lockResponse.data) {
+        toast.success('Crop plan saved and locked successfully!');
+        // Refresh fields to show the locked crop
+        fetchFields();
+        setRecommendation(null);
       }
     } catch (error) {
-      console.error('Save crop plan error:', error);
+      console.error('Save error:', error);
       toast.error(error.response?.data?.error || 'Failed to save crop plan');
     } finally {
       setSavingPlan(false);
     }
   };
 
+  const getCurrentSeason = () => {
+    const month = new Date().getMonth();
+    if (month >= 6 && month <= 10) return 'kharif';
+    if (month >= 10 || month <= 3) return 'rabi';
+    return 'zaid';
+  };
+
+  // 🆕 NEW: Fetch crop frequency insight
+  const fetchCropFrequency = async (cropName) => {
+    try {
+      setLoadingFrequency(true);
+      const selectedFieldData = getSelectedFieldData();
+      
+      // Build query params with regional context
+      const params = new URLSearchParams();
+      if (selectedFieldData?.district) {
+        params.append('district', selectedFieldData.district);
+      }
+      if (selectedFieldData?.taluk) {
+        params.append('taluk', selectedFieldData.taluk);
+      }
+      
+      const url = `/crop-plans/crop-frequency/${encodeURIComponent(cropName)}${
+        params.toString() ? '?' + params.toString() : ''
+      }`;
+      
+      console.log('🔍 Fetching crop frequency for:', cropName);
+      const response = await api.get(url);
+      
+      if (response.data) {
+        setCropFrequency(response.data);
+        console.log('✅ Crop frequency data loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Crop frequency error:', error);
+      // Don't show error toast - this is supplementary data
+      setCropFrequency(null);
+    } finally {
+      setLoadingFrequency(false);
+    }
+  };
+
+  const handleUnlockCrop = async () => {
+    if (!selectedField) {
+      toast.error('Please select a field first');
+      return;
+    }
+    
+    try {
+      const response = await api.post(`/predict/unlock-crop/${selectedField}`);
+      if (response.data) {
+        toast.success(response.data.message);
+        // Refresh fields and reset recommendation
+        fetchFields();
+        setRecommendation(null);
+        setShowUnlockConfirmation(false);
+      }
+    } catch (error) {
+      console.error('Unlock error:', error);
+      toast.error(error.response?.data?.error || 'Failed to unlock crop');
+    }
+  };
+
+  const getSelectedFieldData = () => {
+    return fields.find(field => field._id === selectedField);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar role="farmer" />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Market-Aware Crop Recommendation</h1>
-        <p className="text-gray-600 mb-8">Get diversified crop suggestions to avoid market oversupply</p>
+      
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Crop Recommendation</h1>
+          <p className="text-gray-600">Get market-aware crop suggestions based on your field conditions</p>
+        </div>
 
         {initialLoading ? <Loading /> : (
           <>
@@ -166,51 +251,121 @@ const CropRecommendation = () => {
                       </option>
                     ))}
                   </select>
+                  
+                  {/* Display locked crop info if exists */}
+                  {selectedField && getSelectedFieldData()?.isCropLocked && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Lock className="w-5 h-5 text-blue-600" />
+                            <span className="font-semibold text-blue-800">Locked Crop</span>
+                          </div>
+                          <p className="text-lg font-bold text-blue-600 mt-1">
+                            {getSelectedFieldData().lockedCrop}
+                          </p>
+                          <p className="text-sm text-blue-600">
+                            Locked on: {new Date(getSelectedFieldData().cropLockDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowUnlockConfirmation(true)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                        >
+                          <Unlock className="w-4 h-4" />
+                          Change Crop
+                        </button>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-blue-200">
+                        <p className="text-sm text-blue-700">
+                          ✅ <strong>Live monitoring active:</strong> Sensor data is being tracked for irrigation and advisory purposes.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {sensorData ? (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Temperature</p>
-                      <p className="text-2xl font-bold text-green-600">{sensorData.temperature}°C</p>
-                    </div>
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Humidity</p>
-                      <p className="text-2xl font-bold text-blue-600">{sensorData.humidity}%</p>
-                    </div>
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Soil Moisture</p>
-                      <p className="text-2xl font-bold text-green-600">{sensorData.soilMoisture}%</p>
-                    </div>
-                    <div className="p-4 bg-purple-50 rounded-lg">
-                      <p className="text-sm text-gray-600">pH Level</p>
-                      <p className="text-2xl font-bold text-purple-600">{sensorData.pH}</p>
-                    </div>
+              {/* Sensor Data Display */}
+              {sensorData && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Temperature</p>
+                    <p className="text-xl font-bold text-gray-800">{sensorData.temperature}°C</p>
                   </div>
-                  <button
-                    onClick={getRecommendation}
-                    disabled={loading}
-                    className="w-full mt-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading ? 'Analyzing Market & Soil...' : (
-                      <>
-                        <TrendingUp className="w-5 h-5" />
-                        Get Market-Aware Recommendation
-                      </>
-                    )}
-                  </button>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">Waiting for sensor data...</p>
-                  <p className="text-sm text-gray-400">Make sure your ESP32 is connected and sending data</p>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Humidity</p>
+                    <p className="text-xl font-bold text-gray-800">{sensorData.humidity}%</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Soil Moisture</p>
+                    <p className="text-xl font-bold text-gray-800">{sensorData.soilMoisture}%</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">pH Level</p>
+                    <p className="text-xl font-bold text-gray-800">{sensorData.pH}</p>
+                  </div>
                 </div>
               )}
+
+              <button
+                onClick={getRecommendation}
+                disabled={loading || !sensorData || (selectedField && getSelectedFieldData()?.isCropLocked)}
+                className={`w-full px-6 py-3 text-white rounded-lg font-semibold transition-colors ${
+                  loading || !sensorData || (selectedField && getSelectedFieldData()?.isCropLocked)
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Analyzing...
+                  </span>
+                ) : selectedField && getSelectedFieldData()?.isCropLocked ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Lock className="w-5 h-5" />
+                    Crop Locked - Click "Change Crop" to Unlock
+                  </span>
+                ) : (
+                  'Get Market-Aware Recommendation'
+                )}
+              </button>
             </Card>
 
-            {recommendation && (
+            {/* Unlock Confirmation Dialog */}
+            {showUnlockConfirmation && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <Card className="max-w-md w-full">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Unlock className="w-8 h-8 text-yellow-600" />
+                    <h3 className="text-xl font-bold text-gray-800">Change Crop / Start New Season</h3>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-6">
+                    Are you sure you want to change the crop for this field? This will unlock crop prediction for the next season.
+                  </p>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowUnlockConfirmation(false)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUnlockCrop}
+                      className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Recommendation Results */}
+            {recommendation && !recommendation.recommendationDisabled && (
               <>
                 {/* Regional Market Insights */}
                 {recommendation.regionalInsights && (
@@ -231,7 +386,7 @@ const CropRecommendation = () => {
                             </p>
                           </div>
                         )}
-
+                        
                         {recommendation.regionalInsights.oversupplied_crops.length > 0 && (
                           <div className="mb-3">
                             <p className="text-sm font-semibold text-red-700 mb-1">⚠️ Oversupplied Crops:</p>
@@ -261,7 +416,7 @@ const CropRecommendation = () => {
                     </div>
                   </Card>
                 )}
-
+                
                 <Card className="mb-6">
                   <div className="text-center mb-6">
                     <Sprout className="w-16 h-16 text-green-600 mx-auto mb-4" />
@@ -282,36 +437,163 @@ const CropRecommendation = () => {
                     
                     {recommendation.mlModel && (
                       <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm font-semibold text-blue-800 mb-2">🤖 {recommendation.mlModel.algorithm}</p>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
-                          <div>
-                            <span className="font-semibold">Model Accuracy:</span> {recommendation.mlModel.accuracy?.toFixed(1)}%
-                          </div>
-                          <div>
-                            <span className="font-semibold">Market Factors:</span> {recommendation.mlModel.marketFactorsApplied ? '✅ Applied' : '❌ Not Applied'}
-                          </div>
-                        </div>
-                        {recommendation.mlModel.diversificationStrategy && (
-                          <div className="mt-2 text-xs text-blue-700">
-                            <span className="font-semibold">Diversification:</span> {recommendation.mlModel.diversificationStrategy}
-                          </div>
-                        )}
+                        <p className="text-sm text-blue-700">
+                          <strong>ML Model:</strong> {recommendation.mlModel}
+                        </p>
                       </div>
                     )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg">Alternative Crop Options</h3>
-                    <p className="text-sm text-gray-600">Diversify your farm to reduce market risk and maximize profitability</p>
                     
-                    {recommendation.suitableCrops?.map((crop, idx) => (
-                      <div key={idx} className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 transition">
-                        <div className="flex justify-between items-start mb-3">
+                    <button
+                      onClick={() => saveCropPlan(recommendation.recommendedCrop)}
+                      disabled={savingPlan}
+                      className="mt-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
+                    >
+                      {savingPlan ? 'Locking Crop...' : `Lock "${recommendation.recommendedCrop}" for this Field`}
+                    </button>
+                  </div>
+                </Card>
+
+                {/* 🆕 NEW FEATURE: Crop Frequency Insight Panel */}
+                {cropFrequency && (
+                  <Card className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <TrendingUp className="w-6 h-6 text-blue-600" />
+                        Crop Frequency Insight
+                      </h3>
+                      <span className="text-xs text-gray-500">
+                        {cropFrequency.region.district} | {cropFrequency.season} {cropFrequency.year}
+                      </span>
+                    </div>
+
+                    {/* Risk Indicator Banner */}
+                    <div className={`p-4 rounded-lg mb-4 ${
+                      cropFrequency.insight.colorCode === 'red' ? 'bg-red-50 border-2 border-red-200' :
+                      cropFrequency.insight.colorCode === 'orange' ? 'bg-orange-50 border-2 border-orange-200' :
+                      cropFrequency.insight.colorCode === 'yellow' ? 'bg-yellow-50 border-2 border-yellow-200' :
+                      'bg-green-50 border-2 border-green-200'
+                    }`}>
+                      <div className="flex items-start gap-3">
+                        {cropFrequency.insight.riskLevel === 'high' ? (
+                          <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+                        ) : cropFrequency.insight.riskLevel === 'medium' ? (
+                          <Info className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1" />
+                        ) : (
+                          <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                        )}
+                        <div className="flex-1">
+                          <p className={`font-semibold text-lg mb-1 ${
+                            cropFrequency.insight.colorCode === 'red' ? 'text-red-700' :
+                            cropFrequency.insight.colorCode === 'orange' ? 'text-orange-700' :
+                            cropFrequency.insight.colorCode === 'yellow' ? 'text-yellow-700' :
+                            'text-green-700'
+                          }`}>
+                            {cropFrequency.insight.trendDescription}
+                          </p>
+                          <p className="text-gray-700 mb-2">{cropFrequency.insight.insight}</p>
+                          <p className="text-sm text-gray-600">{cropFrequency.insight.recommendation}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Statistics Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Farmers Growing</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {cropFrequency.statistics.farmersWithSameCrop}
+                        </p>
+                        <p className="text-xs text-gray-500">out of {cropFrequency.statistics.totalFarmers}</p>
+                      </div>
+                      
+                      <div className="text-center p-3 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Frequency</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {cropFrequency.statistics.frequencyPercentage}%
+                        </p>
+                        <p className="text-xs text-gray-500">of farmers</p>
+                      </div>
+                      
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Total Area</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {cropFrequency.statistics.totalAreaForCrop}
+                        </p>
+                        <p className="text-xs text-gray-500">hectares</p>
+                      </div>
+                      
+                      <div className="text-center p-3 bg-orange-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Area Share</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {cropFrequency.statistics.areaPercentage}%
+                        </p>
+                        <p className="text-xs text-gray-500">of total</p>
+                      </div>
+                    </div>
+
+                    {/* Top Competing Crops */}
+                    {cropFrequency.topCompetingCrops && cropFrequency.topCompetingCrops.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Top Crops in Your Region:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {cropFrequency.topCompetingCrops.map((crop, idx) => (
+                            <div 
+                              key={idx}
+                              className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                            >
+                              <span className="font-semibold text-gray-800">{crop.crop}</span>
+                              <span className="text-gray-600 ml-2">({crop.percentage}%)</span>
+                              <span className="text-gray-500 ml-1 text-xs">{crop.farmers} farmers</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Visual Progress Bar */}
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Market Saturation</span>
+                        <span>{cropFrequency.statistics.frequencyPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            cropFrequency.insight.colorCode === 'red' ? 'bg-red-500' :
+                            cropFrequency.insight.colorCode === 'orange' ? 'bg-orange-500' :
+                            cropFrequency.insight.colorCode === 'yellow' ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`}
+                          style={{ width: `${Math.min(cropFrequency.statistics.frequencyPercentage, 100)}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Low Competition</span>
+                        <span>High Competition</span>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Alternative Crops */}
+                <Card>
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Alternative Suitable Crops</h3>
+                  
+                  <div className="space-y-4">
+                    {recommendation.suitableCrops.map((crop, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-lg">{crop.name}</span>
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="text-lg font-semibold text-gray-800">{crop.name}</h4>
                               {crop.supply_status && (
-                                <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  crop.supply_status.includes('Oversupply') 
+                                    ? 'bg-red-100 text-red-700' 
+                                    : crop.supply_status.includes('Opportunity')
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                }`}>
                                   {crop.supply_status}
                                 </span>
                               )}
@@ -335,15 +617,8 @@ const CropRecommendation = () => {
                             {savingPlan ? 'Saving...' : 'Select'}
                           </button>
                         </div>
-
-                        {crop.market_warning && (
-                          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded flex items-start gap-2">
-                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                            <p className="text-xs text-yellow-800">{crop.market_warning}</p>
-                          </div>
-                        )}
-
-                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm">
                           <div>
                             <p className="text-green-600 font-semibold flex items-center gap-1">
                               <CheckCircle className="w-4 h-4" /> Pros:
