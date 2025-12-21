@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext'; // Add this import
 import { Sprout, User, Mail, Lock, Phone, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/helpers';
@@ -8,6 +9,7 @@ import { getCurrentLocation } from '../utils/helpers';
 const Signup = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
+  const { t, isKannada } = useLanguage(); // Add this line
   const [role, setRole] = useState('farmer');
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -34,10 +36,10 @@ const Signup = () => {
       const location = await getCurrentLocation();
       console.log('Location received:', location);
       setFormData({ ...formData, location });
-      toast.success('Location captured successfully!');
+      toast.success(t('locationCaptured'));
     } catch (error) {
       console.error('Location error:', error);
-      toast.error(error.message || 'Failed to get location. Please enable GPS and location permissions.');
+      toast.error(error.message || t('locationFailed'));
     } finally {
       setLocationLoading(false);
     }
@@ -51,15 +53,15 @@ const Signup = () => {
       const result = await signup({ ...formData, role });
       
       if (result.success) {
-        toast.success('Account created successfully!');
+        toast.success(t('accountCreated'));
         navigate(role === 'farmer' ? '/farmer/dashboard' : '/agent/dashboard', { replace: true });
       } else {
-        toast.error(result.error || 'Signup failed');
+        toast.error(result.error || t('signupFailed'));
         setLoading(false);
       }
     } catch (error) {
       console.error('Signup error:', error);
-      toast.error('An error occurred during signup');
+      toast.error(t('signupError'));
       setLoading(false);
     }
   };
@@ -77,8 +79,10 @@ const Signup = () => {
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join <span className="font-semibold text-green-600">KrishiSakha</span></p>
+          <h1 className="text-3xl font-bold text-gray-800">{t('createAccount')}</h1>
+          <p className="text-gray-600 mt-2">
+            {t('join')} <span className="font-semibold text-green-600">KrishiSakha</span>
+          </p>
         </div>
 
         {/* Role Selection */}
@@ -92,7 +96,7 @@ const Signup = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            Farmer
+            {t('farmer')}
           </button>
           <button
             type="button"
@@ -103,14 +107,14 @@ const Signup = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            Labour Agent
+            {t('labourAgent')}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
+              {t('fullName')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -121,14 +125,14 @@ const Signup = () => {
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter your name"
+                placeholder={t('enterYourName')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t('email')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -146,7 +150,7 @@ const Signup = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -165,7 +169,7 @@ const Signup = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
+              {t('phoneNumber')}
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -184,7 +188,7 @@ const Signup = () => {
           {role === 'farmer' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Farm Size (acres)
+                {t('farmSize')}
               </label>
               <input
                 type="number"
@@ -202,26 +206,26 @@ const Signup = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location (Optional) {formData.location.lat !== 0 && '✓'}
+              {t('location')}
             </label>
-            <button
-              type="button"
-              onClick={getLocation}
-              disabled={locationLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <MapPin className="w-5 h-5" />
-              {locationLoading
-                ? 'Capturing Location...'
-                : formData.location.lat !== 0
-                ? `Location Captured ✓`
-                : 'Capture Current Location (Optional)'}
-            </button>
-            {formData.location.address && (
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                {formData.location.address}
-              </p>
-            )}
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                readOnly
+                value={formData.location.address || `${formData.location.lat}, ${formData.location.lng}`}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                placeholder={t('locationPlaceholder')}
+              />
+              <button
+                type="button"
+                onClick={getLocation}
+                disabled={locationLoading}
+                className="absolute right-2 top-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+              >
+                {locationLoading ? t('gettingLocation') : t('getLocation')}
+              </button>
+            </div>
           </div>
 
           <button
@@ -233,14 +237,14 @@ const Signup = () => {
                 : 'bg-blue-600 hover:bg-blue-700'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? t('creatingAccount') : t('createAccount')}
           </button>
         </form>
 
         <p className="text-center text-gray-600 mt-6">
-          Already have an account?{' '}
+          {t('haveAccount')}{' '}
           <Link to="/login" className="text-green-600 font-semibold hover:underline">
-            Login
+            {t('login')}
           </Link>
         </p>
       </div>

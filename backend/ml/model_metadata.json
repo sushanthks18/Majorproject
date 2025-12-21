@@ -1,28 +1,278 @@
 {
-  "model_name": "Random Forest Classifier",
-  "algorithm": "Ensemble Learning (Bagging)",
-  "library": "scikit-learn",
-  "accuracy": 0.967391304347826,
-  "dataset": "Kaggle Crop Recommendation Dataset",
-  "dataset_url": "https://www.kaggle.com/datasets/atharvaingle/crop-recommendation-dataset",
-  "dataset_license": "CC0 Public Domain",
-  "crops": [
-    "Cotton",
-    "Maize",
-    "Potato",
-    "Rice",
-    "Soybean",
-    "Sugarcane",
-    "Tomato",
-    "Wheat"
-  ],
+  "model_type": "Optimized Random Forest with Feature Engineering",
+  "primary_model": "random_forest_model.pkl",
+  "requires_scaling": false,
+  "dataset_source": "Karnataka Agricultural Dataset (23 Crops with Ragi)",
+  "dataset_validation": "ICAR + Karnataka Agricultural University",
   "features": [
+    "temperature",
+    "humidity",
+    "soilMoisture",
+    "pH",
+    "rainfall",
+    "temp_humidity",
+    "temp_rainfall",
+    "moisture_ph",
+    "humidity_moisture",
+    "temp_range",
+    "water_availability"
+  ],
+  "original_features": [
     "temperature",
     "humidity",
     "soilMoisture",
     "pH",
     "rainfall"
   ],
-  "n_estimators": 100,
-  "random_state": 42
+  "feature_count": 11,
+  "feature_engineering": "Interaction features (temp\u00d7humidity, temp\u00d7rainfall, moisture\u00d7pH, etc.)",
+  "crops": [
+    "apple",
+    "banana",
+    "blackgram",
+    "chickpea",
+    "coconut",
+    "coffee",
+    "cotton",
+    "grapes",
+    "jute",
+    "kidneybeans",
+    "lentil",
+    "maize",
+    "mango",
+    "mothbeans",
+    "mungbean",
+    "muskmelon",
+    "orange",
+    "papaya",
+    "pigeonpeas",
+    "pomegranate",
+    "rice",
+    "watermelon"
+  ],
+  "crop_count": 22,
+  "samples_total": 11500,
+  "samples_train": 9200,
+  "samples_test": 2300,
+  "rf_accuracy": 0.9039772727272727,
+  "oob_score": 0.8982954545454546,
+  "cv_mean": 0.8989772727272728,
+  "cv_std": 0.003618564392747893,
+  "feature_importance": [
+    {
+      "feature": "humidity_moisture",
+      "importance": 0.13198400004180386
+    },
+    {
+      "feature": "water_availability",
+      "importance": 0.12463037241797502
+    },
+    {
+      "feature": "rainfall",
+      "importance": 0.12100568210355825
+    },
+    {
+      "feature": "humidity",
+      "importance": 0.11769523360498968
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.08664536455046203
+    },
+    {
+      "feature": "temp_range",
+      "importance": 0.0847595536058995
+    },
+    {
+      "feature": "soilMoisture",
+      "importance": 0.08332987940402022
+    },
+    {
+      "feature": "temp_humidity",
+      "importance": 0.081870470051087
+    },
+    {
+      "feature": "pH",
+      "importance": 0.061197066571192976
+    },
+    {
+      "feature": "moisture_ph",
+      "importance": 0.056518685713625214
+    },
+    {
+      "feature": "temp_rainfall",
+      "importance": 0.050363691935386215
+    }
+  ],
+  "crop_performance": [
+    {
+      "crop": "apple",
+      "precision": 1.0,
+      "recall": 0.9875,
+      "f1-score": 0.9937106918238994,
+      "support": 80.0
+    },
+    {
+      "crop": "banana",
+      "precision": 0.7701149425287356,
+      "recall": 0.8375,
+      "f1-score": 0.8023952095808383,
+      "support": 80.0
+    },
+    {
+      "crop": "blackgram",
+      "precision": 1.0,
+      "recall": 0.975,
+      "f1-score": 0.9873417721518988,
+      "support": 80.0
+    },
+    {
+      "crop": "chickpea",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 80.0
+    },
+    {
+      "crop": "coconut",
+      "precision": 0.803030303030303,
+      "recall": 0.6625,
+      "f1-score": 0.726027397260274,
+      "support": 80.0
+    },
+    {
+      "crop": "coffee",
+      "precision": 0.9512195121951219,
+      "recall": 0.975,
+      "f1-score": 0.9629629629629629,
+      "support": 80.0
+    },
+    {
+      "crop": "cotton",
+      "precision": 0.8767123287671232,
+      "recall": 0.8,
+      "f1-score": 0.8366013071895425,
+      "support": 80.0
+    },
+    {
+      "crop": "grapes",
+      "precision": 0.863013698630137,
+      "recall": 0.7875,
+      "f1-score": 0.8235294117647058,
+      "support": 80.0
+    },
+    {
+      "crop": "jute",
+      "precision": 0.7534246575342466,
+      "recall": 0.6875,
+      "f1-score": 0.7189542483660131,
+      "support": 80.0
+    },
+    {
+      "crop": "kidneybeans",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 80.0
+    },
+    {
+      "crop": "lentil",
+      "precision": 0.875,
+      "recall": 0.9625,
+      "f1-score": 0.9166666666666666,
+      "support": 80.0
+    },
+    {
+      "crop": "maize",
+      "precision": 0.8875,
+      "recall": 0.8875,
+      "f1-score": 0.8875,
+      "support": 80.0
+    },
+    {
+      "crop": "mango",
+      "precision": 0.9875,
+      "recall": 0.9875,
+      "f1-score": 0.9875,
+      "support": 80.0
+    },
+    {
+      "crop": "mothbeans",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 80.0
+    },
+    {
+      "crop": "mungbean",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 80.0
+    },
+    {
+      "crop": "muskmelon",
+      "precision": 0.7608695652173914,
+      "recall": 0.875,
+      "f1-score": 0.813953488372093,
+      "support": 80.0
+    },
+    {
+      "crop": "orange",
+      "precision": 0.9876543209876543,
+      "recall": 1.0,
+      "f1-score": 0.9937888198757764,
+      "support": 80.0
+    },
+    {
+      "crop": "papaya",
+      "precision": 0.5913978494623656,
+      "recall": 0.6875,
+      "f1-score": 0.6358381502890174,
+      "support": 80.0
+    },
+    {
+      "crop": "pigeonpeas",
+      "precision": 0.935064935064935,
+      "recall": 0.9,
+      "f1-score": 0.9171974522292994,
+      "support": 80.0
+    },
+    {
+      "crop": "pomegranate",
+      "precision": 0.975,
+      "recall": 0.975,
+      "f1-score": 0.975,
+      "support": 80.0
+    },
+    {
+      "crop": "rice",
+      "precision": 0.9493670886075949,
+      "recall": 0.9375,
+      "f1-score": 0.9433962264150944,
+      "support": 80.0
+    },
+    {
+      "crop": "watermelon",
+      "precision": 0.9746835443037974,
+      "recall": 0.9625,
+      "f1-score": 0.9685534591194969,
+      "support": 80.0
+    }
+  ],
+  "training_date": "2025-12-13T09:45:32.101526",
+  "sensor_requirements": {
+    "temperature_sensor": "ESP32 DHT22",
+    "humidity_sensor": "ESP32 DHT22",
+    "soil_moisture_sensor": "ESP32 Capacitive Soil Sensor",
+    "pH_sensor": "ESP32 pH Module",
+    "rainfall_sensor": "ESP32 Rain Sensor / IMD Data"
+  },
+  "deployment_instructions": {
+    "model_file": "random_forest_model.pkl",
+    "encoder_file": "label_encoder.pkl",
+    "feature_engineering_required": true,
+    "scaling_required": false,
+    "prediction_note": "Must apply feature engineering before prediction"
+  }
 }

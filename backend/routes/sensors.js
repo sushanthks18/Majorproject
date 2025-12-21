@@ -1,6 +1,8 @@
 import express from 'express';
 import SensorData from '../models/SensorData.js';
+import AggregatedSensorData from '../models/AggregatedSensorData.js';
 import { authenticate, authenticateFarmer } from '../middleware/auth.js';
+import { aggregateSensorData, storeAggregatedData, getLatestAggregation, compareAggregatedWithRealtime } from '../services/sensorAggregation.js';
 
 const router = express.Router();
 
@@ -261,6 +263,107 @@ router.get('/stats', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching sensor stats:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get aggregated sensor data
+router.get('/aggregated', authenticate, async (req, res) => {
+  try {
+    const { period = 'hourly', limit = 10 } = req.query;
+    const farmerId = req.user.role === 'farmer' ? req.user.id : null;
+    
+    const query = { aggregationPeriod: period };
+    if (farmerId) query.farmerId = farmerId;
+    
+    const aggregatedData = await AggregatedSensorData.find(query)
+      .sort({ endTime: -1 })
+      .limit(parseInt(limit));
+    
+    res.json({ 
+      data: aggregatedData,
+      count: aggregatedData.length,
+      period
+    });
+  } catch (error) {
+    console.error('Error fetching aggregated data:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get latest aggregation
+router.get('/aggregated/latest', authenticate, async (req, res) => {
+  try {
+    const { period = 'hourly' } = req.query;
+    const farmerId = req.user.role === 'farmer' ? req.user.id : null;
+    
+    const latest = await getLatestAggregation(farmerId, period);
+    
+    if (!latest) {
+      return res.status(404).json({ 
+        error: 'No aggregated data available',
+        message: 'Aggregation will be created automatically with sensor data'
+      });
+    }
+    
+    res.json({ data: latest });
+  } catch (error) {
+    console.error('Error fetching latest aggregation:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create manual aggregation
+router.post('/aggregate', authenticate, async (req, res) => {
+  try {
+    const { hours = 24, period = 'hourly' } = req.body;
+    const farmerId = req.user.role === 'farmer' ? req.user.id : null;
+    
+    console.log(`\n📊 [Manual Aggregation] Creating ${period} aggregation for ${hours} hours...`);
+    
+    const aggregates = await aggregateSensorData({ 
+      farmerId, 
+      hours: parseInt(hours), 
+      aggregationPeriod: period 
+    });
+    
+    if (!aggregates) {
+      return res.status(404).json({ 
+        error: 'No sensor data available',
+        message: `Need at least some sensor readings from the last ${hours} hours`
+      });
+    }
+    
+    const saved = await storeAggregatedData(aggregates);
+    
+    res.json({ 
+      message: 'Aggregation created successfully',
+      data: saved
+    });
+  } catch (error) {
+    console.error('Error creating aggregation:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Compare current reading with aggregated data
+router.post('/compare', authenticate, async (req, res) => {
+  try {
+    const { temperature, humidity, soilMoisture, pH, rainfall = 0 } = req.body;
+    const farmerId = req.user.role === 'farmer' ? req.user.id : null;
+    
+    if (!temperature || !humidity || !soilMoisture || !pH) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: temperature, humidity, soilMoisture, pH' 
+      });
+    }
+    
+    const realtimeReading = { temperature, humidity, soilMoisture, pH, rainfall };
+    const comparison = await compareAggregatedWithRealtime(realtimeReading, farmerId);
+    
+    res.json(comparison);
+  } catch (error) {
+    console.error('Error comparing sensor data:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 

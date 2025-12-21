@@ -16,9 +16,6 @@ const CropRecommendation = () => {
   const [selectedField, setSelectedField] = useState(null);
   const [savingPlan, setSavingPlan] = useState(false);
   const [showUnlockConfirmation, setShowUnlockConfirmation] = useState(false);
-  // 🆕 NEW: Crop Frequency Insight states
-  const [cropFrequency, setCropFrequency] = useState(null);
-  const [loadingFrequency, setLoadingFrequency] = useState(false);
 
   useEffect(() => {
     fetchSensorData();
@@ -88,7 +85,9 @@ const CropRecommendation = () => {
         humidity: parseFloat(sensorData.humidity) || 65,
         soilMoisture: parseFloat(sensorData.soilMoisture) || 50,
         pH: parseFloat(sensorData.pH) || 6.5,
-        fieldId: selectedField
+        rainfall: parseFloat(sensorData.rainfall) || 100,
+        fieldId: selectedField,
+        useAggregated: true
       };
       
       console.log('Sending crop recommendation request:', payload);
@@ -102,11 +101,6 @@ const CropRecommendation = () => {
         } else {
           setRecommendation(response.data);
           toast.success('Market-aware recommendation generated!');
-          
-          // 🆕 NEW: Fetch crop frequency insight for recommended crop
-          if (response.data.recommendedCrop) {
-            fetchCropFrequency(response.data.recommendedCrop);
-          }
         }
       } else {
         toast.error('No recommendation received');
@@ -159,41 +153,6 @@ const CropRecommendation = () => {
     if (month >= 6 && month <= 10) return 'kharif';
     if (month >= 10 || month <= 3) return 'rabi';
     return 'zaid';
-  };
-
-  // 🆕 NEW: Fetch crop frequency insight
-  const fetchCropFrequency = async (cropName) => {
-    try {
-      setLoadingFrequency(true);
-      const selectedFieldData = getSelectedFieldData();
-      
-      // Build query params with regional context
-      const params = new URLSearchParams();
-      if (selectedFieldData?.district) {
-        params.append('district', selectedFieldData.district);
-      }
-      if (selectedFieldData?.taluk) {
-        params.append('taluk', selectedFieldData.taluk);
-      }
-      
-      const url = `/crop-plans/crop-frequency/${encodeURIComponent(cropName)}${
-        params.toString() ? '?' + params.toString() : ''
-      }`;
-      
-      console.log('🔍 Fetching crop frequency for:', cropName);
-      const response = await api.get(url);
-      
-      if (response.data) {
-        setCropFrequency(response.data);
-        console.log('✅ Crop frequency data loaded:', response.data);
-      }
-    } catch (error) {
-      console.error('Crop frequency error:', error);
-      // Don't show error toast - this is supplementary data
-      setCropFrequency(null);
-    } finally {
-      setLoadingFrequency(false);
-    }
   };
 
   const handleUnlockCrop = async () => {
@@ -452,128 +411,6 @@ const CropRecommendation = () => {
                     </button>
                   </div>
                 </Card>
-
-                {/* 🆕 NEW FEATURE: Crop Frequency Insight Panel */}
-                {cropFrequency && (
-                  <Card className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <TrendingUp className="w-6 h-6 text-blue-600" />
-                        Crop Frequency Insight
-                      </h3>
-                      <span className="text-xs text-gray-500">
-                        {cropFrequency.region.district} | {cropFrequency.season} {cropFrequency.year}
-                      </span>
-                    </div>
-
-                    {/* Risk Indicator Banner */}
-                    <div className={`p-4 rounded-lg mb-4 ${
-                      cropFrequency.insight.colorCode === 'red' ? 'bg-red-50 border-2 border-red-200' :
-                      cropFrequency.insight.colorCode === 'orange' ? 'bg-orange-50 border-2 border-orange-200' :
-                      cropFrequency.insight.colorCode === 'yellow' ? 'bg-yellow-50 border-2 border-yellow-200' :
-                      'bg-green-50 border-2 border-green-200'
-                    }`}>
-                      <div className="flex items-start gap-3">
-                        {cropFrequency.insight.riskLevel === 'high' ? (
-                          <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-                        ) : cropFrequency.insight.riskLevel === 'medium' ? (
-                          <Info className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1" />
-                        ) : (
-                          <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                        )}
-                        <div className="flex-1">
-                          <p className={`font-semibold text-lg mb-1 ${
-                            cropFrequency.insight.colorCode === 'red' ? 'text-red-700' :
-                            cropFrequency.insight.colorCode === 'orange' ? 'text-orange-700' :
-                            cropFrequency.insight.colorCode === 'yellow' ? 'text-yellow-700' :
-                            'text-green-700'
-                          }`}>
-                            {cropFrequency.insight.trendDescription}
-                          </p>
-                          <p className="text-gray-700 mb-2">{cropFrequency.insight.insight}</p>
-                          <p className="text-sm text-gray-600">{cropFrequency.insight.recommendation}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Statistics Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Farmers Growing</p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {cropFrequency.statistics.farmersWithSameCrop}
-                        </p>
-                        <p className="text-xs text-gray-500">out of {cropFrequency.statistics.totalFarmers}</p>
-                      </div>
-                      
-                      <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Frequency</p>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {cropFrequency.statistics.frequencyPercentage}%
-                        </p>
-                        <p className="text-xs text-gray-500">of farmers</p>
-                      </div>
-                      
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Total Area</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {cropFrequency.statistics.totalAreaForCrop}
-                        </p>
-                        <p className="text-xs text-gray-500">hectares</p>
-                      </div>
-                      
-                      <div className="text-center p-3 bg-orange-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Area Share</p>
-                        <p className="text-2xl font-bold text-orange-600">
-                          {cropFrequency.statistics.areaPercentage}%
-                        </p>
-                        <p className="text-xs text-gray-500">of total</p>
-                      </div>
-                    </div>
-
-                    {/* Top Competing Crops */}
-                    {cropFrequency.topCompetingCrops && cropFrequency.topCompetingCrops.length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold text-gray-700 mb-2">Top Crops in Your Region:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {cropFrequency.topCompetingCrops.map((crop, idx) => (
-                            <div 
-                              key={idx}
-                              className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
-                            >
-                              <span className="font-semibold text-gray-800">{crop.crop}</span>
-                              <span className="text-gray-600 ml-2">({crop.percentage}%)</span>
-                              <span className="text-gray-500 ml-1 text-xs">{crop.farmers} farmers</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Visual Progress Bar */}
-                    <div className="mt-4">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Market Saturation</span>
-                        <span>{cropFrequency.statistics.frequencyPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            cropFrequency.insight.colorCode === 'red' ? 'bg-red-500' :
-                            cropFrequency.insight.colorCode === 'orange' ? 'bg-orange-500' :
-                            cropFrequency.insight.colorCode === 'yellow' ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min(cropFrequency.statistics.frequencyPercentage, 100)}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>Low Competition</span>
-                        <span>High Competition</span>
-                      </div>
-                    </div>
-                  </Card>
-                )}
 
                 {/* Alternative Crops */}
                 <Card>

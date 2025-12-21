@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 import { 
   Sprout, Home, TrendingUp, Activity, Search, 
   FileText, Bell, User, LogOut, Briefcase, 
-  Calendar, DollarSign, BarChart3, ShoppingBag, ChevronDown, Leaf, Satellite
+  Calendar, DollarSign, BarChart3, ShoppingBag, ChevronDown, Leaf, Satellite,
+  ClipboardList, Users, MapPin
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const Navbar = ({ role = 'farmer' }) => {
   const { user, logout } = useAuth();
+  const { t, isKannada } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation(); // Add this line
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -25,73 +31,69 @@ const Navbar = ({ role = 'farmer' }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      toast.error('Failed to logout');
+    }
   };
 
   const handleProfileClick = () => {
-    const profileRoute = role === 'farmer' ? '/farmer/profile' : '/agent/profile';
-    navigate(profileRoute);
     setShowProfileMenu(false);
+    navigate(`/${role}/profile`);
   };
 
-  const farmerLinks = [
-    { to: '/farmer/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/farmer/fields', icon: Satellite, label: 'Satellite Monitoring' },
-    { to: '/farmer/notifications', icon: Bell, label: 'Notifications' },
-    { to: '/farmer/find-labour', icon: Search, label: 'Find Labour' },
-    { to: '/farmer/mandi-prices', icon: ShoppingBag, label: 'Mandi Prices' },
-    { to: '/farmer/analytics', icon: BarChart3, label: 'Analytics' },
+  // Define navigation items based on role
+  const navItems = role === 'farmer' ? [
+    { name: t('dashboard'), path: '/farmer/dashboard', icon: Home },
+    { name: t('cropRecommendation'), path: '/farmer/crop-recommendation', icon: Sprout },
+    { name: t('mandiPrices'), path: '/farmer/mandi-prices', icon: TrendingUp },
+    { name: t('myFields'), path: '/farmer/fields', icon: MapPin },
+    { name: 'News', path: '/farmer/news', icon: Bell },
+    { name: t('services'), path: '/farmer/find-labour', icon: Users },
+    { name: t('analytics'), path: '/farmer/analytics', icon: BarChart3 },
+  ] : [
+    { name: t('dashboard'), path: '/agent/dashboard', icon: Home },
+    { name: t('services'), path: '/agent/service-requests', icon: ClipboardList },
   ];
-
-  const agentLinks = [
-    { to: '/agent/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/agent/profile', icon: User, label: 'My Profile' },
-    { to: '/agent/requests', icon: FileText, label: 'Service Requests' },
-    { to: '/agent/active-jobs', icon: Briefcase, label: 'Active Jobs' },
-    { to: '/agent/earnings', icon: DollarSign, label: 'Earnings' },
-  ];
-
-  const links = role === 'farmer' ? farmerLinks : agentLinks;
-  const primaryColor = role === 'farmer' ? 'green' : 'blue';
 
   return (
-    <nav className={`bg-${primaryColor}-600 text-white shadow-lg`}>
+    <nav className="bg-gradient-to-r from-green-600 to-blue-600 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            {/* Logo with gradient background */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-green-400 rounded-full blur-sm opacity-75"></div>
-              <div className="relative bg-white rounded-full p-2">
-                <Sprout className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-            {/* App Name */}
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-wide">KrishiSakha</span>
-              <span className="text-xs opacity-80 -mt-1">Your Farm Companion</span>
-            </div>
+            <Sprout className="w-8 h-8" />
+            <span className="text-xl font-bold">{t('appName')}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
-            {links.map((link) => {
-              const Icon = link.icon;
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-1">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
               return (
                 <Link
-                  key={link.to}
-                  to={link.to}
-                  className="flex items-center gap-2 hover:bg-white/10 px-3 py-2 rounded-lg transition"
+                  key={item.path}
+                  to={item.path}
+                  className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                    isActive 
+                      ? 'bg-white/20 backdrop-blur-sm' 
+                      : 'hover:bg-white/10'
+                  }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm">{link.label}</span>
+                  <item.icon className="w-4 h-4" />
+                  {item.name}
                 </Link>
               );
             })}
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+            
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -163,7 +165,7 @@ const Navbar = ({ role = 'farmer' }) => {
                     className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition"
                   >
                     <User className="w-4 h-4" />
-                    <span className="text-sm">View Profile</span>
+                    <span className="text-sm">{t('profile')}</span>
                   </button>
 
                   {/* Logout Button */}
@@ -172,7 +174,7 @@ const Navbar = ({ role = 'farmer' }) => {
                     className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 transition"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span className="text-sm">Logout</span>
+                    <span className="text-sm">{t('logout')}</span>
                   </button>
                 </div>
               )}

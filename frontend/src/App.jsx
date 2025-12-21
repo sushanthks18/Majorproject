@@ -1,13 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Toaster } from 'react-hot-toast';
 
-// Auth Pages
+// Import pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-
-// Farmer Pages
 import FarmerDashboard from './pages/farmer/Dashboard';
 import CropRecommendation from './pages/farmer/CropRecommendation';
 import DiseaseCheck from './pages/farmer/DiseaseCheck';
@@ -17,16 +16,17 @@ import MandiPrices from './pages/farmer/MandiPrices';
 import Analytics from './pages/farmer/Analytics';
 import Notifications from './pages/farmer/Notifications';
 import FarmerProfile from './pages/farmer/Profile';
-import FieldsList from './pages/farmer/FieldsList';
-import FieldRegistration from './pages/farmer/FieldRegistration';
-import SatelliteMonitoring from './pages/farmer/SatelliteMonitoring';
-import SmartIrrigation from './pages/farmer/SmartIrrigation';
-import FertilizerOptimization from './pages/farmer/FertilizerOptimization';
-
-// Agent Pages
 import AgentDashboard from './pages/agent/Dashboard';
 import AgentProfile from './pages/agent/AgentProfile';
 import ServiceRequests from './pages/agent/ServiceRequests';
+import FieldRegistration from './pages/farmer/FieldRegistration';
+import FieldsList from './pages/farmer/FieldsList';
+import SatelliteMonitoring from './pages/farmer/SatelliteMonitoring';
+import SmartIrrigation from './pages/farmer/SmartIrrigation';
+import FertilizerOptimization from './pages/farmer/FertilizerOptimization';
+import TestTranslations from './pages/TestTranslations';
+import LanguageTest from './pages/LanguageTest';
+import News from './pages/farmer/News';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -56,11 +56,13 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
@@ -112,6 +114,8 @@ function AppContent() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/test-translations" element={<TestTranslations />} />
+          <Route path="/language-test" element={<LanguageTest />} /> {/* Add this route */}
 
           {/* Farmer Routes */}
           <Route
@@ -234,6 +238,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/farmer/news"
+            element={
+              <ProtectedRoute allowedRole="farmer">
+                <News />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Agent Routes */}
           <Route
@@ -280,8 +292,8 @@ function AppContent() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
-      </>
-    );
-  }
+    </>
+  );
+}
 
 export default App;

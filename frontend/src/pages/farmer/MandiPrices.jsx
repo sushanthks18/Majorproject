@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Card from '../../components/Card';
 import Loading from '../../components/Loading';
-import { TrendingUp, TrendingDown, Calendar, MapPin, DollarSign, AlertCircle, RefreshCw, Database } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, MapPin, DollarSign, AlertCircle, RefreshCw, Database, Search } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -16,8 +16,24 @@ const MandiPrices = () => {
   const [days, setDays] = useState(30);
   const [priceData, setPriceData] = useState(null);
   const [locations, setLocations] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const crops = ['Rice', 'Wheat', 'Cotton', 'Maize', 'Sugarcane', 'Mixed Vegetables'];
+  // ALL 23 crops from ML model (including Ragi - Karnataka's staple)
+  const allCrops = [
+    // Cereals
+    'Rice', 'Maize', 'Ragi',  // Ragi (Finger Millet) is Karnataka's staple crop
+    // Pulses
+    'Chickpea', 'Kidneybeans', 'Pigeonpeas', 'Mothbeans', 'Mungbean', 'Blackgram', 'Lentil',
+    // Fruits
+    'Pomegranate', 'Banana', 'Mango', 'Grapes', 'Watermelon', 'Muskmelon', 'Apple', 'Orange', 'Papaya', 'Coconut',
+    // Cash Crops
+    'Cotton', 'Jute', 'Coffee'
+  ];
+
+  // Filter crops based on search term
+  const filteredCrops = allCrops.filter(crop => 
+    crop.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     fetchLocations();
@@ -155,16 +171,40 @@ const MandiPrices = () => {
         <Card className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Crop</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Crop (Search from 23 varieties)
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search crops..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
               <select
                 value={selectedCrop}
                 onChange={(e) => setSelectedCrop(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                size="5"
               >
-                {crops.map(crop => (
-                  <option key={crop} value={crop}>{crop}</option>
-                ))}
+                {filteredCrops.length > 0 ? (
+                  filteredCrops.map(crop => (
+                    <option key={crop} value={crop}>
+                      {crop} {allCrops.indexOf(crop) < 3 ? '(Cereal)' : 
+                              allCrops.indexOf(crop) < 10 ? '(Pulse)' : 
+                              allCrops.indexOf(crop) < 20 ? '(Fruit)' : '(Cash Crop)'}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No crops found</option>
+                )}
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Showing {filteredCrops.length} of {allCrops.length} crops
+              </p>
             </div>
 
             <div>

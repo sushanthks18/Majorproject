@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Card, { StatCard } from '../../components/Card';
@@ -12,6 +13,7 @@ import Loading from '../../components/Loading';
 
 const FarmerDashboard = () => {
   const { user } = useAuth();
+  const { t, getCropName, isKannada, language } = useLanguage();
   const navigate = useNavigate();
   const [sensorData, setSensorData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,14 @@ const FarmerDashboard = () => {
     completedJobs: 0,
     alerts: 0
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Current language:', language);
+    console.log('Is Kannada:', isKannada);
+    console.log('Dashboard translation:', t('dashboard'));
+    console.log('Welcome translation:', t('welcomeBack'));
+  }, [language, isKannada, t]);
 
   useEffect(() => {
     fetchSensorData();
@@ -201,51 +211,15 @@ const FarmerDashboard = () => {
               },
             }
           );
-        } else if (data.status === 'completed') {
-          toast.success(
-            `✓ ${data.agentName} completed the ${data.service} service!`,
-            {
-              duration: 5000,
-              icon: '🎊',
-            }
-          );
-        } else {
-          toast(`Request ${data.status}: ${data.agentName}`);
         }
-        
-        // Refresh stats and notifications
-        fetchStats();
-        fetchTopNotifications();
       });
-      
-      // Check if we already have recent data (from previous page)
-      if (sensorData) {
-        const now = new Date();
-        const dataTime = new Date(sensorData.timestamp || sensorData.createdAt);
-        const timeDiff = (now - dataTime) / 1000; // seconds
-        
-        // If data is less than 30 seconds old, consider ESP32 connected
-        if (timeDiff < 30) {
-          const isRealESP32 = sensorData.deviceId?.includes('ESP32') || sensorData.source === 'krishi-sakha';
-          setEsp32Connected(isRealESP32);
-          setLastUpdateTime(dataTime);
-        }
-      }
-    }
 
-    // Check connection status every 10 seconds (reduced from 30)
-    const connectionCheck = setInterval(() => {
-      if (lastUpdateTime) {
-        const timeSinceUpdate = (new Date() - lastUpdateTime) / 1000;
-        if (timeSinceUpdate >= 30) { // Consider disconnected after 30 seconds (reduced from 60)
-          setEsp32Connected(false);
-        }
-      }
-    }, 10000);
-
-    return () => {
-      clearInterval(connectionCheck);
-      // Don't remove socket listeners - keep them active for navigation
+      // Clean up on unmount
+      return () => {
+        socket.off('sensorUpdate');
+        socket.off('requestUpdate');
+        // Don't remove socket listeners - keep them active for navigation
+      };
     };
   };
 
@@ -258,13 +232,13 @@ const FarmerDashboard = () => {
       if (sensorData.temperature > 40) {
         alerts.push({
           type: 'critical',
-          message: '⚠️ Extreme heat detected! Protect your crops immediately.',
+          key: 'extremeHeat',
           icon: <Thermometer className="w-5 h-5" />
         });
       } else if (sensorData.temperature < 10) {
         alerts.push({
           type: 'warning',
-          message: '❄️ Cold temperatures may affect crop growth.',
+          key: 'coldTemperature',
           icon: <Snowflake className="w-5 h-5" />
         });
       }
@@ -273,13 +247,13 @@ const FarmerDashboard = () => {
       if (sensorData.soilMoisture < 30) {
         alerts.push({
           type: 'critical',
-          message: '💦 Soil moisture critically low! Immediate irrigation needed.',
+          key: 'soilMoistureLow',
           icon: <Droplets className="w-5 h-5" />
         });
       } else if (sensorData.soilMoisture > 80) {
         alerts.push({
           type: 'warning',
-          message: '🌊 Soil too wet! Risk of root rot and fungal diseases.',
+          key: 'soilMoistureHigh',
           icon: <Droplets className="w-5 h-5" />
         });
       }
@@ -288,7 +262,7 @@ const FarmerDashboard = () => {
       if (sensorData.pH < 5.5 || sensorData.pH > 8.5) {
         alerts.push({
           type: 'critical',
-          message: '🧪 Soil pH outside optimal range! Crop health may be affected.',
+          key: 'phOutOfRange',
           icon: <Beaker className="w-5 h-5" />
         });
       }
@@ -306,9 +280,9 @@ const FarmerDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">
-            Welcome back, {user?.name}! 👋
+            {t('welcomeBack')}, {user?.name}! 👋
           </h1>
-          <p className="text-gray-600 mt-2">Here's what's happening on your farm today</p>
+          <p className="text-gray-600 mt-2">{t('farmStatus')}</p>
         </div>
 
         {/* Weather Widget */}
@@ -324,22 +298,22 @@ const FarmerDashboard = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Droplets className="w-5 h-5" />
-                    <span>Humidity: {weather.humidity}%</span>
+                    <span>{t('humidity')}: {weather.humidity}%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Wind className="w-5 h-5" />
-                    <span>Wind: {weather.windSpeed} km/h</span>
+                    <span>{t('wind')}: {weather.windSpeed} km/h</span>
                   </div>
                   {weather.rainfall > 0 && (
                     <div className="flex items-center gap-2">
                       <CloudRain className="w-5 h-5" />
-                      <span>Rainfall: {weather.rainfall} mm</span>
+                      <span>{t('rainfall')}: {weather.rainfall} mm</span>
                     </div>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm opacity-90">Last updated</p>
+                <p className="text-sm opacity-90">{t('lastUpdated')}</p>
                 <p className="font-semibold">{new Date().toLocaleTimeString()}</p>
               </div>
             </div>
@@ -350,11 +324,11 @@ const FarmerDashboard = () => {
         {sensorData && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">📡 Live Sensor Data</h2>
+              <h2 className="text-xl font-bold text-gray-800">📡 {t('liveSensorData')}</h2>
               {esp32Connected && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-semibold text-green-700">ESP32 Connected</span>
+                  <span className="text-xs font-semibold text-green-700">{t('esp32Connected')}</span>
                 </div>
               )}
             </div>
@@ -364,7 +338,7 @@ const FarmerDashboard = () => {
               <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-l-4 border-red-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Temperature</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('temperature')}</p>
                     <p className="text-3xl font-bold text-gray-800">{sensorData.temperature}°C</p>
                   </div>
                   <Thermometer className="w-10 h-10 text-red-500" />
@@ -375,7 +349,7 @@ const FarmerDashboard = () => {
               <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-l-4 border-blue-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Humidity</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('humidity')}</p>
                     <p className="text-3xl font-bold text-gray-800">{sensorData.humidity}%</p>
                   </div>
                   <Droplets className="w-10 h-10 text-blue-500" />
@@ -386,7 +360,7 @@ const FarmerDashboard = () => {
               <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-l-4 border-green-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Soil Moisture</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('soilMoisture')}</p>
                     <p className="text-3xl font-bold text-gray-800">{sensorData.soilMoisture}%</p>
                   </div>
                   <Sprout className="w-10 h-10 text-green-500" />
@@ -397,7 +371,7 @@ const FarmerDashboard = () => {
               <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-l-4 border-purple-500">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">pH Level</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('phLevel')}</p>
                     <p className="text-3xl font-bold text-gray-800">{sensorData.pH}</p>
                   </div>
                   <FlaskConical className="w-10 h-10 text-purple-500" />
@@ -407,7 +381,7 @@ const FarmerDashboard = () => {
             
             {lastUpdateTime && (
               <p className="text-xs text-gray-500 mt-3 text-center">
-                Last updated: {lastUpdateTime.toLocaleTimeString()}
+                {t('lastUpdated')}: {lastUpdateTime.toLocaleTimeString()}
               </p>
             )}
           </div>
@@ -416,7 +390,7 @@ const FarmerDashboard = () => {
         {/* Critical Alerts */}
         {alerts.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">🚨 Critical Alerts</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">🚨 {t('criticalAlerts')}</h2>
             <div className="space-y-3">
               {alerts.map((alert, index) => (
                 <Card 
@@ -432,7 +406,7 @@ const FarmerDashboard = () => {
                       {alert.icon}
                     </div>
                     <p className={alert.type === 'critical' ? 'text-red-800 font-semibold' : 'text-yellow-800 font-semibold'}>
-                      {alert.message}
+                      {t(alert.key)}
                     </p>
                   </div>
                 </Card>
@@ -444,12 +418,12 @@ const FarmerDashboard = () => {
         {/* Fields Overview */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">🌾 My Fields</h2>
+            <h2 className="text-xl font-bold text-gray-800">🌾 {t('myFields')}</h2>
             <button
               onClick={() => navigate('/farmer/fields')}
               className="px-4 py-2 text-green-600 hover:text-green-700 font-semibold flex items-center gap-2"
             >
-              View All Fields
+              {t('viewAll')}
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -457,13 +431,13 @@ const FarmerDashboard = () => {
           {fields.length === 0 ? (
             <Card className="text-center py-12">
               <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">No fields registered yet</h3>
-              <p className="text-gray-500 mb-4">Get started by adding your first field</p>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">{t('noFieldsYet')}</h3>
+              <p className="text-gray-500 mb-4">{t('addFirstField')}</p>
               <button
                 onClick={() => navigate('/farmer/register-field')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
-                Register Field
+                {t('addFirstField')}
               </button>
             </Card>
           ) : (
@@ -490,14 +464,14 @@ const FarmerDashboard = () => {
                     {field.cropType && (
                       <div className="flex items-center gap-2">
                         <Sprout className="w-4 h-4 text-green-600" />
-                        <span>{field.cropType}</span>
+                        <span>{getCropName(field.cropType)}</span>
                       </div>
                     )}
                     
                     {field.isCropLocked && field.lockedCrop && (
                       <div className="flex items-center gap-2">
                         <Lock className="w-4 h-4 text-blue-600" />
-                        <span className="text-blue-600 font-medium">Locked: {field.lockedCrop}</span>
+                        <span className="text-blue-600 font-medium">Locked: {getCropName(field.lockedCrop)}</span>
                       </div>
                     )}
                     
@@ -535,14 +509,14 @@ const FarmerDashboard = () => {
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">⚡ Quick Actions</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">⚡ {t('quickActions')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <button
               onClick={() => navigate('/farmer/find-labour')}
               className="p-6 bg-green-600 text-white rounded-xl hover:bg-green-700 transition flex flex-col items-center gap-3"
             >
               <Search className="w-8 h-8" />
-              <span className="font-semibold">Find Labour</span>
+              <span className="font-semibold">{t('findLabour')}</span>
             </button>
             
             <button
@@ -550,7 +524,7 @@ const FarmerDashboard = () => {
               className="p-6 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition flex flex-col items-center gap-3"
             >
               <Sprout className="w-8 h-8" />
-              <span className="font-semibold">Crop Recommendation</span>
+              <span className="font-semibold">{t('cropRecommendation')}</span>
             </button>
             
             <button
@@ -558,7 +532,7 @@ const FarmerDashboard = () => {
               className="p-6 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition flex flex-col items-center gap-3"
             >
               <Activity className="w-8 h-8" />
-              <span className="font-semibold">Disease Check</span>
+              <span className="font-semibold">{t('diseaseCheck')}</span>
             </button>
             
             <button
@@ -566,7 +540,7 @@ const FarmerDashboard = () => {
               className="p-6 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition flex flex-col items-center gap-3"
             >
               <TrendingUp className="w-8 h-8" />
-              <span className="font-semibold">Mandi Prices</span>
+              <span className="font-semibold">{t('mandiPrices')}</span>
             </button>
             
             <button
@@ -574,18 +548,18 @@ const FarmerDashboard = () => {
               className="p-6 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition flex flex-col items-center gap-3"
             >
               <BarChart3 className="w-8 h-8" />
-              <span className="font-semibold">Analytics</span>
+              <span className="font-semibold">{t('analytics')}</span>
             </button>
           </div>
         </div>
 
         {/* Recent Activity */}
         <div>
-          <h2 className="text-xl font-bold text-gray-800 mb-4">🕒 Recent Activity</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">🕒 {t('recentActivity')}</h2>
           <Card>
             <div className="py-8 text-center">
               <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Recent activity will appear here</p>
+              <p className="text-gray-500">{t('recentActivity')}</p>
             </div>
           </Card>
         </div>

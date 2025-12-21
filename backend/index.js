@@ -5,6 +5,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { startNotificationScheduler } from './utils/notificationService.js';
+import { syncPriorityData } from './sync_gov_data.js';
+import { autoAggregateHourly } from './services/sensorAggregation.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -20,7 +22,8 @@ import satelliteRoutes from './routes/satellite.js';
 import irrigationRoutes from './routes/irrigation.js';
 import assistantRoutes from './routes/assistant.js';
 import cropPlanRoutes from './routes/cropPlans.js';
-import cropRoutes from './routes/crops.js'; // 🆕 NEW: Crop Frequency Insight
+import cropRoutes from './routes/crops.js';
+import newsRoutes from './routes/news.js';
 
 dotenv.config();
 
@@ -48,7 +51,7 @@ global.io = io;
 app.set('io', io);
 
 // MongoDB connection - For demo purposes
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/krishi-sakha';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-agriculture';
 
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 3000,
@@ -76,7 +79,8 @@ app.use('/api/satellite', satelliteRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/crop-plans', cropPlanRoutes);
-app.use('/api/crops', cropRoutes); // 🆕 NEW: Crop Frequency Insight
+app.use('/api/crops', cropRoutes);
+app.use('/api/news', newsRoutes);
 
 // Health check
 app.get('/', (req, res) => {
@@ -129,6 +133,56 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
+// Schedule periodic sync with government API (once per day)
+function schedulePeriodicSync() {
+  // Run sync once per day at 2 AM
+  setInterval(async () => {
+    try {
+      console.log('⏰ Scheduled sync: Attempting to sync with Government API...');
+      await syncPriorityData();
+      console.log('✅ Scheduled sync completed successfully');
+    } catch (error) {
+      console.error('⏰ Scheduled sync failed:', error.message);
+    }
+  }, 24 * 60 * 60 * 1000); // 24 hours
+  
+  // Also run sync immediately after startup (but delayed)
+  setTimeout(async () => {
+    try {
+      console.log('🚀 Initial sync: Attempting to sync with Government API...');
+      await syncPriorityData();
+      console.log('✅ Initial sync completed successfully');
+    } catch (error) {
+      console.error('🚀 Initial sync failed:', error.message);
+    }
+  }, 30000); // 30 seconds after startup
+}
+
+// Schedule hourly sensor data aggregation
+function scheduleHourlyAggregation() {
+  // Run aggregation every hour
+  setInterval(async () => {
+    try {
+      console.log('⏰ [SCHEDULER] Running hourly sensor aggregation...');
+      await autoAggregateHourly();
+      console.log('✅ [SCHEDULER] Hourly aggregation completed');
+    } catch (error) {
+      console.error('❌ [SCHEDULER] Aggregation failed:', error.message);
+    }
+  }, 60 * 60 * 1000); // 1 hour
+  
+  // Also run aggregation immediately after startup
+  setTimeout(async () => {
+    try {
+      console.log('🚀 [STARTUP] Creating initial sensor aggregation...');
+      await autoAggregateHourly();
+      console.log('✅ [STARTUP] Initial aggregation completed');
+    } catch (error) {
+      console.error('❌ [STARTUP] Initial aggregation failed:', error.message);
+    }
+  }, 10000); // 10 seconds after startup
+}
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
@@ -137,6 +191,8 @@ httpServer.listen(PORT, () => {
   setTimeout(() => {
     if (mongoose.connection.readyState === 1) {
       startNotificationScheduler();
+      schedulePeriodicSync();
+      scheduleHourlyAggregation(); // ✅ Start hourly sensor aggregation
     }
   }, 5000); // Wait 5 seconds for DB connection
 });

@@ -1,46 +1,90 @@
-# Krishi Sakha – IoT Based Farm Assistant
+# Krishi Sakha (ಕೃಷಿಸಖ) – Soil's Voice for the Farmer
 
-A comprehensive agricultural management system with ESP32 IoT sensor integration, ML-powered crop predictions, satellite monitoring, smart irrigation, and farmer-agent marketplace.
+A comprehensive agricultural IoT management system integrating ESP32 sensors, machine learning, satellite monitoring, smart irrigation, live mandi prices, agricultural news, and farmer-labour marketplace. Built for real-time, production-ready agricultural decision support.
 
 ## 🌟 Features
 
 ### 👨‍🌾 Farmer Interface
-- **Real-time IoT Sensor Monitoring**: Live ESP32 sensor data (temperature, humidity, soil moisture, pH, rainfall)
+- **Real-time IoT Sensor Monitoring**: 
+  - Live ESP32 sensor data (temperature, humidity, soil moisture, pH, rainfall)
+  - 24-hour rolling average aggregation for ML predictions
+  - Exponential weighted averages for accurate trend analysis
+  - Auto-refresh dashboard with WebSocket updates
+  - Historical data visualization with interactive charts
+  
 - **🛰️ Satellite Monitoring**: 
-  - NDVI analysis for crop health assessment
-  - Sentinel-2 satellite imagery integration
+  - NDVI (Normalized Difference Vegetation Index) crop health analysis
+  - Sentinel-2 satellite imagery integration via Sentinel Hub API
   - Smart sensor placement recommendations based on field zones
-  - Interactive map with field boundaries and sensor locations
+  - Interactive Leaflet maps with field boundaries and sensor locations
+  - Zone-based health scoring (healthy/moderate/stressed areas)
+  
 - **🤖 ML-Powered Predictions**:
-  - Market-aware crop recommendation (Random Forest model)
-  - Crop frequency insight with competition analysis
+  - Market-aware crop recommendation (Random Forest - 90.40% accuracy)
+  - Uses both real-time AND aggregated sensor data
   - Disease risk prediction with preventive measures
   - Yield prediction with revenue estimation
+  - Profitability scoring for alternative crops
+  - Supply status indicators (oversupply/opportunity/balanced)
+  
 - **💧 Smart Irrigation**:
-  - Automated irrigation scheduling
-  - Soil moisture-based recommendations
-  - Water usage optimization
+  - Automated irrigation scheduling based on soil moisture
+  - Soil moisture-based water application recommendations
+  - Water usage optimization for sustainability
+  - Schedule management with timing suggestions
+  
 - **🧪 Fertilizer Optimization**:
-  - NPK recommendations based on soil and crop
-  - Application timing suggestions
-- **📊 Crop Frequency Insight**:
-  - Real-time market competition analysis
-  - Region and season-based crop frequency
-  - Risk level assessment (Very High/High/Medium/Low)
-  - Smart thresholds (requires ≥5 farmers for meaningful competition)
+  - NPK (Nitrogen-Phosphorus-Potassium) recommendations
+  - Soil and crop-specific fertilizer suggestions
+  - Application timing and quantity guidance
+  
 - **🔍 Field Management**:
-  - Register fields via survey number, GPS, or manual coordinates
-  - Soil type detection
+  - Register fields via survey number lookup
+  - GPS-based field registration with coordinates
+  - Manual field entry with address
+  - Automatic soil type detection from coordinates
   - Crop locking mechanism for season planning
+  - Field boundary visualization on interactive maps
+  
 - **👷 Labour Marketplace**:
   - Find nearby labour agents with distance-based search
-  - Filter by service type, radius, rating, and availability
+  - Filter by service type (plowing, sowing, spraying, harvesting, etc.)
+  - Search radius up to 100km with real-time distance calculation
+  - View agent ratings, experience, and equipment availability
   - Request services with preferred date/time
-  - Track request status (pending/accepted/completed)
-- **📈 Mandi Prices**: Live market prices for crops
-- **🔔 Notifications**: Automated alerts for weather and crop conditions
-- **📊 Analytics**: Historical sensor data visualization with charts
-- **🎤 Voice Assistant**: Voice-controlled farm assistant
+  - Track request status (pending/accepted/completed/cancelled)
+  - Contact details exchange upon acceptance
+  - Get directions to agent location
+  
+- **📈 Live Mandi Prices**: 
+  - Real-time AGMARKNET API integration (Government of India)
+  - 11,251+ cached price records for Karnataka APMCs
+  - 24-hour cache strategy for reliability
+  - Graceful fallback when government API unavailable
+  - Historical price trends and market analysis
+  - Multi-crop price comparison
+  
+- **📰 Agricultural News**:
+  - Bilingual news (English/Kannada - ಕನ್ನಡ)
+  - Daily auto-updating content with date-based variations
+  - Categories: Market updates, Weather, Crops, Government schemes, Alerts
+  - External links to official sources (AGMARKNET, IMD, PM-KISAN)
+  - Auto-refresh on language switch
+  
+- **🔔 Notifications**: 
+  - Real-time alerts for service requests
+  - Weather condition notifications
+  - Crop health alerts from satellite analysis
+  
+- **📊 Analytics**: 
+  - Historical sensor data visualization
+  - Interactive charts with Recharts library
+  - Time-series analysis of environmental conditions
+  
+- **🌐 Bilingual Support**:
+  - Full English/Kannada (ಕನ್ನಡ) language switching
+  - Translation for all UI elements
+  - Language-aware news and content
 
 ### 👷 Labour Agent Interface
 - **Profile Management**: Set services offered, hourly rate, experience, equipment
@@ -62,6 +106,7 @@ A comprehensive agricultural management system with ESP32 IoT sensor integration
 - **Scikit-learn** (Random Forest ML model)
 - **Sentinel Hub API** (satellite imagery)
 - **Rasterio** (geospatial data processing)
+- **AGMARKNET API** (Government of India mandi prices)
 
 ### Frontend
 - **React 18** + Vite
@@ -82,6 +127,64 @@ A comprehensive agricultural management system with ESP32 IoT sensor integration
 - **pH sensor**
 - **Rain sensor**
 - **WiFi connectivity** for real-time data transmission
+
+## 🤖 Machine Learning Model
+
+### Model Architecture
+- **Algorithm**: Random Forest Classifier
+- **Number of Trees**: 2,000
+- **Maximum Depth**: Unlimited
+- **Criterion**: Entropy
+- **Class Weighting**: Balanced
+
+### Dataset Information
+| Parameter | Value |
+|-----------|-------|
+| Total Samples | 11,500 |
+| Training Samples | 9,200 (80%) |
+| Testing Samples | 2,300 (20%) |
+| Number of Crops | 22 |
+| Original Features | 5 |
+| Engineered Features | 6 |
+| Total Features | 11 |
+
+### Features Used
+**Original Sensor Inputs:**
+1. Temperature (°C)
+2. Humidity (%)
+3. Soil Moisture (%)
+4. pH (0-14)
+5. Rainfall (mm)
+
+**Engineered Features:**
+1. temp_humidity – Temperature × Humidity interaction
+2. temp_rainfall – Temperature × Rainfall interaction
+3. moisture_ph – Soil Moisture × pH interaction
+4. humidity_moisture – Humidity × Soil Moisture interaction
+5. temp_range – Temperature squared
+6. water_availability – Average of Soil Moisture and Rainfall
+
+### Model Performance
+| Metric | Value |
+|--------|-------|
+| Training Accuracy (OOB) | 89.83% |
+| Testing Accuracy | 90.40% |
+| Cross-validation | 89.90% (±0.36%) |
+
+### Supported Crops (22)
+Apple, Banana, Blackgram, Chickpea, Coconut, Coffee, Cotton, Grapes, Jute, Kidneybeans, Lentil, Maize, Mango, Mothbeans, Mungbean, Muskmelon, Orange, Papaya, Pigeonpeas, Pomegranate, Rice, Watermelon
+
+### Top Feature Importance
+1. Humidity-Moisture Interaction: 13.20%
+2. Water Availability: 12.46%
+3. Rainfall: 12.10%
+4. Humidity: 11.77%
+5. Temperature: 8.66%
+
+### Data Sources
+- **Crop Parameters**: Indian Council of Agricultural Research (ICAR)
+- **Market Data**: AGMARKNET Portal (https://agmarknet.gov.in)
+- **Government API**: data.gov.in Open Data Platform
 
 ## 📦 Installation
 
@@ -248,12 +351,16 @@ For detailed ESP32 setup, see `ESP32_SETUP_GUIDE.md`
 #### Crop Plans
 - `POST /api/crop-plans` - Save crop plan
 - `GET /api/crop-plans/:fieldId` - Get field's crop plans
-- `GET /api/crop-plans/crop-frequency/:cropName` - Get crop frequency insight
 
-#### Crop Frequency (New Feature)
-- `POST /api/crops/savePrediction` - Save crop prediction
-- `GET /api/crops/frequency?region=X&season=Y&crop=Z` - Get frequency analysis
-- `GET /api/crops/all` - Get all predictions
+#### Mandi Prices
+- `GET /api/mandi/prices` - Get live AGMARKNET prices
+- `POST /api/mandi/refresh` - Refresh prices from government API
+- `GET /api/mandi/crops` - Get available crops
+
+#### Agricultural News
+- `GET /api/news/agricultural?language=en` - Get agricultural news (English)
+- `GET /api/news/agricultural?language=kn` - Get agricultural news (Kannada)
+- `GET /api/news/agricultural?category=market` - Filter by category
 
 #### Irrigation
 - `POST /api/irrigation/schedule/:fieldId` - Create irrigation schedule
@@ -297,22 +404,30 @@ For detailed ESP32 setup, see `ESP32_SETUP_GUIDE.md`
 }
 ```
 
-### Testing Crop Frequency Insight
+### Testing Live Mandi Prices
 
 ```bash
-# Save a crop prediction
-curl -X POST http://localhost:5001/api/crops/savePrediction \
-  -H "Content-Type: application/json" \
-  -d '{
-    "farmerId": "farmer123",
-    "predictedCrop": "Wheat",
-    "area": 3.5,
-    "region": "Tumkur",
-    "season": "Rabi 2025"
-  }'
+# Get live prices for a crop
+curl "http://localhost:5001/api/mandi/prices?crop=Cotton&location=Hubli"
 
-# Get frequency analysis
-curl "http://localhost:5001/api/crops/frequency?region=Tumkur&season=Rabi%202025&crop=Wheat"
+# Refresh prices from AGMARKNET API
+curl -X POST http://localhost:5001/api/mandi/refresh \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"crop": "Cotton", "location": "Hubli"}'
+```
+
+### Testing Agricultural News
+
+```bash
+# Get English news
+curl "http://localhost:5001/api/news/agricultural?language=en"
+
+# Get Kannada news
+curl "http://localhost:5001/api/news/agricultural?language=kn"
+
+# Get market news only
+curl "http://localhost:5001/api/news/agricultural?category=market&language=en"
 ```
 
 ### Real-time Features
@@ -334,29 +449,36 @@ phase3first/
 │   │   ├── SensorData.js
 │   │   ├── Field.js
 │   │   ├── CropPlan.js
-│   │   ├── CropPrediction.js  # 🆕 New for frequency insight
 │   │   ├── SatelliteAnalysis.js
 │   │   ├── IrrigationSchedule.js
 │   │   ├── FertilizerRecommendation.js
 │   │   ├── Agent.js
-│   │   └── Request.js
+│   │   ├── Request.js
+│   │   └── MandiPrice.js    # 🆕 AGMARKNET price cache
 │   ├── routes/              # API routes
 │   │   ├── auth.js
 │   │   ├── sensors.js
 │   │   ├── fields.js
 │   │   ├── cropPlans.js
-│   │   ├── crops.js         # 🆕 New crop frequency routes
 │   │   ├── satellite.js
 │   │   ├── irrigation.js
+│   │   ├── fertilizer.js
 │   │   ├── predict.js
 │   │   ├── agents.js
-│   │   └── requests.js
+│   │   ├── requests.js
+│   │   ├── mandi.js         # 🆕 Live mandi price API
+│   │   └── news.js          # 🆕 Agricultural news API
 │   ├── middleware/          # Auth middleware
 │   ├── ml/                  # Machine Learning
-│   │   ├── train_model.py
+│   │   ├── train_model_all_crops.py    # Random Forest training (90.40% accuracy)
 │   │   ├── predict_crop.py
-│   │   ├── market_aware_predictor.py
-│   │   └── graphs/          # Training performance graphs
+│   │   ├── market_aware_predictor.py   # Production predictor with feature engineering
+│   │   ├── random_forest_model.pkl     # Trained model (2000 trees)
+│   │   ├── label_encoder.pkl           # Crop label encoder
+│   │   ├── model_metadata.json         # Model performance metrics
+│   │   ├── Crop_recommendation.csv     # Training dataset (11,500 samples)
+│   │   ├── confusion_matrix.csv        # Model evaluation matrix
+│   │   └── graphs/                     # Training performance graphs
 │   ├── satellite_service.py # Satellite data processing
 │   ├── index.js            # Server entry point
 │   └── package.json
@@ -381,7 +503,8 @@ phase3first/
 │   │   │   │   ├── FertilizerOptimization.jsx
 │   │   │   │   ├── CropRecommendation.jsx
 │   │   │   │   ├── Analytics.jsx
-│   │   │   │   ├── MandiPrices.jsx
+│   │   │   │   ├── MandiPrices.jsx      # 🆕 Live AGMARKNET prices
+│   │   │   │   ├── News.jsx             # 🆕 Bilingual agricultural news
 │   │   │   │   ├── FindLabour.jsx
 │   │   │   │   └── Notifications.jsx
 │   │   │   ├── agent/       # Agent dashboard pages
@@ -393,7 +516,7 @@ phase3first/
 │   │   ├── utils/           # Helper functions
 │   │   │   ├── api.js
 │   │   │   ├── socket.js
-│   │   │   └── helpers.js
+│   │   │   └── translations.js  # 🆕 Bilingual translations
 │   │   ├── App.jsx          # Main app component
 │   │   └── main.jsx         # Entry point
 │   └── package.json
@@ -444,11 +567,14 @@ phase3first/
 ✅ Zone-based health scoring (healthy/moderate/stressed)  
 
 ### Machine Learning
-✅ **Random Forest crop recommendation** model  
-✅ Market-aware predictions (91.71% accuracy)  
-✅ **Crop frequency insight** with competition analysis  
-✅ Smart risk thresholds (requires ≥5 farmers)  
-✅ Disease risk prediction  
+✅ **Random Forest crop recommendation** model (90.40% accuracy)  
+✅ **11,500 samples** dataset with 22 crop types  
+✅ **Feature engineering**: 5 sensor inputs expanded to 11 features  
+✅ **Cross-validation accuracy**: 89.90% (±0.36%)  
+✅ Market-aware predictions using supply/demand analysis  
+✅ Uses both **real-time** and **24-hour aggregated** sensor data  
+✅ Profitability scoring for alternative crops  
+✅ Disease risk prediction with preventive measures  
 ✅ Yield estimation with revenue calculation  
 
 ### Field Management
@@ -460,7 +586,11 @@ phase3first/
 ### Smart Agriculture
 ✅ **Automated irrigation scheduling** based on soil moisture  
 ✅ **Fertilizer optimization** with NPK recommendations  
-✅ **Live mandi prices** for market intelligence  
+✅ **Live mandi prices** via AGMARKNET API integration  
+✅ **11,251+ cached price records** for Karnataka APMCs  
+✅ **24-hour cache strategy** with graceful API fallback  
+✅ **Bilingual agricultural news** (English/Kannada)  
+✅ **Daily auto-updating news** with 12 curated articles  
 ✅ Weather alerts and notifications  
 
 ### Labour Marketplace
@@ -470,10 +600,14 @@ phase3first/
 ✅ Contact details exchange upon acceptance  
 ✅ Real-time notifications (Socket.io)  
 
-### Recent Fixes
-✅ **Fixed:** Satellite Monitoring blank page (missing Navbar import)  
-✅ **Improved:** Crop frequency logic (no high risk for single farmer)  
-✅ **Removed:** Sensor update toast notifications (user request)  
+### Production-Ready Features
+✅ **AGMARKNET Integration:** Real-time government API with graceful error handling  
+✅ **Rate Limiting:** 5-second minimum interval between API calls  
+✅ **Cache Strategy:** 24-hour fallback when government API unavailable  
+✅ **Bilingual Support:** Complete English/Kannada translation system  
+✅ **Dynamic News:** Date-based variations for fresh daily content  
+✅ **Professional UI:** Clean tagline display with Sprout icon branding  
+✅ **Real-time Updates:** WebSocket integration for instant notifications  
 
 ## 🔮 Future Enhancements
 
@@ -482,11 +616,13 @@ phase3first/
 - [ ] Advanced ML models (Deep Learning for disease detection)
 - [ ] Image upload for crop disease detection (CNN)
 - [ ] Chat system between farmer and agent
-- [ ] Multi-language support (Kannada, Hindi, Tamil)
+- [ ] Multi-language expansion (Hindi, Tamil, Telugu)
 - [ ] Mobile app (React Native)
 - [ ] Drone imagery integration
 - [ ] Blockchain for supply chain tracking
 - [ ] AI-powered chatbot for farming queries
+- [ ] Weather forecast API integration
+- [ ] Crop insurance recommendations
 
 ## 📄 License
 
