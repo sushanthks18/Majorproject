@@ -27,6 +27,8 @@ import FertilizerOptimization from './pages/farmer/FertilizerOptimization';
 import TestTranslations from './pages/TestTranslations';
 import LanguageTest from './pages/LanguageTest';
 import News from './pages/farmer/News';
+import VoiceAssistant from './components/VoiceAssistant';
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -67,7 +69,7 @@ function App() {
 }
 
 function AppContent() {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
   
   // Show loading screen during initial auth check
   if (loading) {
@@ -292,6 +294,9 @@ function AppContent() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
+        
+        {/* Render Voice Assistant globally for authenticated users */}
+        {user && <VoiceAssistant />}
     </>
   );
 }

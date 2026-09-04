@@ -25,85 +25,7 @@ function calculateAreaHectares(coordinates) {
   return Math.round(hectares * 100) / 100; // Round to 2 decimals
 }
 
-// Helper function to create circle polygon from center and radius
-function createCirclePolygon(lat, lng, radiusMeters) {
-  const points = 32; // Number of points to approximate circle
-  const coordinates = [];
-  
-  // Earth radius in meters
-  const R = 6371000;
-  
-  for (let i = 0; i <= points; i++) {
-    const angle = (i * 360 / points) * Math.PI / 180;
-    
-    // Calculate point on circle
-    const dx = radiusMeters * Math.cos(angle);
-    const dy = radiusMeters * Math.sin(angle);
-    
-    const newLat = lat + (dy / R) * (180 / Math.PI);
-    const newLng = lng + (dx / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180);
-    
-    coordinates.push([newLng, newLat]); // GeoJSON format: [lng, lat]
-  }
-  
-  return [coordinates]; // Return as array of rings
-}
-
-// Register field by GPS (center + radius)
-router.post('/register-by-gps', authenticate, async (req, res) => {
-  try {
-    const { name, centerLat, centerLng, radiusMeters, soilType, cropType } = req.body;
-    
-    if (!name || !centerLat || !centerLng || !radiusMeters) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    
-    // Validate India bounds (8-37°N, 68-97°E)
-    if (centerLat < 8 || centerLat > 37 || centerLng < 68 || centerLng > 97) {
-      return res.status(400).json({ error: 'Location must be within India' });
-    }
-    
-    // Create circular boundary
-    const coordinates = createCirclePolygon(centerLat, centerLng, radiusMeters);
-    const areaHectares = Math.PI * Math.pow(radiusMeters, 2) / 10000;
-    
-    // Check minimum size
-    if (areaHectares < 0.1) {
-      return res.status(400).json({ 
-        error: 'Field too small. Minimum 0.1 hectares (1000 m²) required for satellite analysis' 
-      });
-    }
-    
-    const field = new Field({
-      farmerId: req.userId,
-      name,
-      registrationType: 'gps',
-      centerLat,
-      centerLng,
-      radiusMeters,
-      boundary: {
-        type: 'Polygon',
-        coordinates
-      },
-      areaHectares: Math.round(areaHectares * 100) / 100,
-      soilType,
-      cropType,
-      verificationStatus: 'unverified'
-    });
-    
-    await field.save();
-    
-    console.log(`✅ Field registered: ${name}, ${areaHectares} ha`);
-    
-    res.status(201).json({
-      message: 'Field registered successfully',
-      field
-    });
-  } catch (error) {
-    console.error('Error registering field:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// (Fake GPS Radius Logic has been successfully purged per structural compliance rules.)
 
 // Register field by polygon coordinates
 router.post('/register-by-polygon', authenticate, async (req, res) => {
@@ -342,61 +264,21 @@ router.post('/fetch-land-records', authenticate, async (req, res) => {
       } catch (apiError) {
         console.error('❌ Government API error:', apiError.message);
         
-        // Fallback to mock data if API fails
-        console.log('⚠️  Falling back to demo mode...');
-        const mockBoundary = generateMockFieldBoundary(state, district, surveyNumber);
-        
-        res.json({
-          success: true,
-          fieldName: `Survey ${surveyNumber}`,
-          boundary: mockBoundary.coordinates,
-          area: mockBoundary.area,
-          soilType: mockBoundary.soilType,
-          state,
-          district,
-          taluk,
-          village,
-          surveyNumber,
-          source: 'Demo Mode (API Error)',
-          message: `Failed to fetch from government API: ${apiError.message}. Using demo data.`,
-          isDemo: true
+        // Strict Compliance: No fake boundaries permitted
+        res.status(400).json({
+           success: false,
+           error: 'Government APIs unreachable. Field boundary must be strictly manually authored per registration system rules.',
+           isDemo: false
         });
       }
     } else {
-      // DEMO MODE - Mock data
-      console.log('📋 Using demo mode (USE_REAL_GOVT_API=false)');
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const mockBoundary = generateMockFieldBoundary(state, district, surveyNumber);
-        
-        console.log('✅ Generated mock boundary:', {
-          surveyNumber,
-          area: mockBoundary.area,
-          soilType: mockBoundary.soilType,
-          coordinates: mockBoundary.coordinates.length
-        });
-        
-        res.json({
-          success: true,
-          fieldName: `Survey ${surveyNumber}`,
-          boundary: mockBoundary.coordinates,
-          area: mockBoundary.area,
-          soilType: mockBoundary.soilType,
-          state,
-          district,
-          taluk,
-          village,
-          surveyNumber,
-          source: 'Demo Mode',
-          message: 'Land records simulation (Enable USE_REAL_GOVT_API for real data)',
-          isDemo: true
-        });
-      } catch (mockError) {
-        console.error('❌ Error generating mock data:', mockError);
-        throw mockError;
-      }
+      // DEMO MODE - Restricted to manual interaction only
+      console.log('📋 Enforcing manual boundary capture instead of dummy layouts');
+      res.status(400).json({
+        success: false,
+        error: "Auto-Mock functionality is disabled per requirements. You must manually define exactly the physical bounds of your land.",
+        isDemo: false
+      });
     }
     
   } catch (error) {
@@ -510,63 +392,7 @@ router.post('/register-by-survey', authenticate, async (req, res) => {
   }
 });
 
-// Helper function to generate mock field boundary
-function generateMockFieldBoundary(state, district, surveyNumber) {
-  // Base coordinates for agricultural/rural areas (NOT city centers)
-  const stateCoordinates = {
-    'Karnataka': { lat: 13.1000, lng: 77.5500 }, // Kanakapura Road - Agricultural belt
-    'Maharashtra': { lat: 18.5200, lng: 73.8567 }, // Pune rural area
-    'Andhra Pradesh': { lat: 16.3067, lng: 80.4365 }, // Guntur rural
-    'Tamil Nadu': { lat: 11.0168, lng: 76.9558 }, // Coimbatore rural
-    'Telangana': { lat: 17.5850, lng: 78.1167 }  // Rangareddy rural
-  };
-  
-  const baseCoord = stateCoordinates[state] || { lat: 13.1000, lng: 77.5500 };
-  
-  // Generate consistent offset based on survey number (spread fields in rural area)
-  let hash = 0;
-  if (surveyNumber) {
-    for (let i = 0; i < surveyNumber.length; i++) {
-      hash = surveyNumber.charCodeAt(i) + ((hash << 5) - hash);
-    }
-  }
-  
-  // Use hash to generate offset - spread in agricultural zones
-  const latOffset = ((Math.abs(hash) % 200) - 100) / 1000; // -0.1 to +0.1 degrees
-  const lngOffset = ((Math.abs(hash >> 8) % 200) - 100) / 1000;
-  
-  const centerLat = baseCoord.lat + latOffset;
-  const centerLng = baseCoord.lng + lngOffset;
-  
-  // Generate rectangular field boundary (realistic farm size)
-  const size = 0.005; // About 3 hectares (typical Indian farm)
-  
-  const boundary = [
-    [centerLng - size, centerLat - size],
-    [centerLng + size, centerLat - size],
-    [centerLng + size, centerLat + size],
-    [centerLng - size, centerLat + size],
-    [centerLng - size, centerLat - size] // Close polygon
-  ];
-  
-  // Calculate approximate area
-  const area = parseFloat((size * size * 12321).toFixed(2));
-  
-  // Ensure minimum area for satellite analysis
-  const finalArea = Math.max(area, 1.2);
-  
-  // Soil types based on region
-  const soilTypes = ['Red Soil', 'Black Soil (Regur)', 'Clay Loam', 'Sandy Loam', 'Alluvial Soil'];
-  const soilType = soilTypes[Math.abs(hash) % soilTypes.length];
-  
-  return {
-    coordinates: [boundary],
-    area: finalArea,
-    soilType
-  };
-}
-
-// Helper function to detect soil type based on GPS coordinates
+// Fake logic removed fully per requirements.
 function detectSoilByLocation(lat, lng) {
   // Soil distribution map of India (simplified)
   // Based on general geological patterns

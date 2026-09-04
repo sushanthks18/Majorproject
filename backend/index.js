@@ -183,7 +183,7 @@ function scheduleHourlyAggregation() {
   }, 10000); // 10 seconds after startup
 }
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   

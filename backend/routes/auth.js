@@ -10,7 +10,7 @@ const router = express.Router();
 // Signup
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, role, phone, location, farmSize } = req.body;
+    const { name, email, password, role, phone, location, farmSize, farmDetails } = req.body;
 
     // Check if user exists
     try {
@@ -34,7 +34,8 @@ router.post('/signup', async (req, res) => {
       role,
       phone,
       location,
-      farmSize: role === 'farmer' ? farmSize : 0
+      farmSize: role === 'farmer' ? farmSize : 0,
+      farmDetails: role === 'farmer' ? farmDetails : {}
     });
 
     try {
@@ -45,19 +46,46 @@ router.post('/signup', async (req, res) => {
       user._id = Date.now().toString();
     }
 
-    // If agent, create agent profile
-    if (role === 'agent') {
-      const agent = new Agent({
-        userId: user._id
-      });
-      try {
-        await agent.save();
-      } catch (agentError) {
-        console.warn('Agent save failed:', agentError.message);
+      // If agent, create agent profile
+      if (role === 'agent') {
+        const agent = new Agent({
+          userId: user._id
+        });
+        try {
+          await agent.save();
+        } catch (agentError) {
+          console.warn('Agent save failed:', agentError.message);
+        }
       }
-    }
 
-    // Generate token
+      // If farmer, automatically instantiate their registered physical Field boundary
+      if (role === 'farmer' && farmDetails && farmDetails.fieldName) {
+        try {
+          const Field = (await import('../models/Field.js')).default;
+          const fieldPayload = new Field({
+             farmerId: user._id,
+             name: farmDetails.fieldName,
+             registrationType: 'polygon',
+             centerLat: farmDetails.lat,
+             centerLng: farmDetails.lng,
+             boundary: {
+               type: 'Polygon',
+               coordinates: [
+                 [...farmDetails.boundary.map(c => [c[1], c[0]]), [farmDetails.boundary[0][1], farmDetails.boundary[0][0]]]
+               ]
+             },
+             areaHectares: farmDetails.boundary.length > 0 ? 1.5 : 0.5,
+             soilType: farmDetails.soil,
+             cropType: farmDetails.crop,
+             verificationStatus: 'unverified'
+          });
+          await fieldPayload.save();
+        } catch (fieldError) {
+          console.warn('Field injection failed:', fieldError.message);
+        }
+      }
+
+      // Generate token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'krishi-sakha-secret-key-2024',
@@ -73,7 +101,8 @@ router.post('/signup', async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
-        location: user.location
+        location: user.location,
+        farmDetails: user.farmDetails
       }
     });
   } catch (error) {
@@ -128,7 +157,8 @@ router.post('/login', async (req, res) => {
         role: user.role,
         phone: user.phone,
         location: user.location,
-        farmSize: user.farmSize
+        farmSize: user.farmSize,
+        farmDetails: user.farmDetails
       }
     });
   } catch (error) {

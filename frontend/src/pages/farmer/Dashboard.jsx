@@ -10,6 +10,16 @@ import api from '../../utils/api';
 import { getSocket } from '../../utils/socket';
 import toast from 'react-hot-toast';
 import Loading from '../../components/Loading';
+import { MapContainer, TileLayer, Marker, Polygon, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const FarmerDashboard = () => {
   const { user } = useAuth();
@@ -441,8 +451,52 @@ const FarmerDashboard = () => {
               </button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {fields.slice(0, 3).map(field => (
+            <div className="mb-6 space-y-6">
+              {/* Interactive Field Boundary Map Integration requested by user */}
+              <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                <div className="bg-green-600 px-4 py-3 text-white flex justify-between items-center">
+                  <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-5 h-5"/> Live Farm Mapping Topography</h3>
+                </div>
+                <div className="h-[400px] w-full z-0 relative">
+                  {fields.length > 0 && fields[0].centerLat && (
+                    <MapContainer 
+                      center={[fields[0].centerLat, fields[0].centerLng]} 
+                      zoom={17} 
+                      style={{ height: '100%', width: '100%' }}
+                    >
+                      <TileLayer 
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+                      />
+                      {fields.map(field => {
+                        const coords = field.boundary?.coordinates?.[0];
+                        // Convert GeoJSON [lng, lat] to Leaflet [lat, lng]
+                        const mapPositions = coords ? coords.map(c => [c[1], c[0]]) : [];
+                        return (
+                          <React.Fragment key={field._id}>
+                            <Marker position={[field.centerLat, field.centerLng]}>
+                              <Popup>
+                                <div className="text-center font-semibold text-lg">{field.name}</div>
+                                <div className="text-gray-600 text-sm">Crop: {getCropName(field.cropType || 'Unknown')}</div>
+                              </Popup>
+                            </Marker>
+                            {mapPositions.length > 0 && (
+                              <Polygon 
+                                positions={mapPositions} 
+                                pathOptions={{ color: 'green', weight: 4, fillColor: '#22c55e', fillOpacity: 0.3 }} 
+                              />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </MapContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Grid cards wrapper */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {fields.slice(0, 3).map(field => (
                 <Card 
                   key={field._id} 
                   className="hover:shadow-md transition-shadow cursor-pointer"
@@ -503,6 +557,7 @@ const FarmerDashboard = () => {
                   </div>
                 </Card>
               ))}
+            </div>
             </div>
           )}
         </div>

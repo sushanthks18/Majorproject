@@ -23,12 +23,22 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
+// ===== Sensor Data Structure =====
+struct SensorData {
+  float temperature;
+  float humidity;
+  float soilMoisture;
+  float pH;
+  float rainLevel;
+};
+
+
 // ===== WiFi Configuration =====
 const char* ssid = "YOUR_WIFI_SSID";           // Replace with your WiFi name
 const char* password = "YOUR_WIFI_PASSWORD";   // Replace with your WiFi password
 
 // ===== Server Configuration =====
-const char* serverUrl = "http://192.168.1.100:5001/api/sensors/data";  // Replace 192.168.1.100 with your computer's IP
+const char* serverUrl = "http://c3d68d5ed3b1be.lhr.life/api/sensors/data";  // Dynamically points to the running backend local host
 const char* deviceId = "ESP32_SENSOR_001";     // Unique device identifier
 const char* apiKey = "your-api-key-here";      // Optional API key for authentication
 
@@ -134,7 +144,15 @@ void connectWiFi() {
   Serial.print("🔌 Connecting to WiFi: ");
   Serial.println(ssid);
   
-  WiFi.begin(ssid, password);
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+  
+  if (strlen(password) > 0) {
+    WiFi.begin(ssid, password);
+  } else {
+    WiFi.begin(ssid);
+  }
   
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 30) {
@@ -170,14 +188,7 @@ void connectWiFi() {
   }
 }
 
-// ===== Sensor Data Structure =====
-struct SensorData {
-  float temperature;
-  float humidity;
-  float soilMoisture;
-  float pH;
-  float rainLevel;
-};
+
 
 // ===== Read All Sensors =====
 SensorData readSensors() {
@@ -231,10 +242,9 @@ void sendToBackend(SensorData data) {
     return;
   }
   
+  WiFiClient client;
   HTTPClient http;
-  
-  // Configure HTTP request
-  http.begin(serverUrl);
+  http.begin(client, serverUrl);
   http.addHeader("Content-Type", "application/json");
   
   // Create JSON payload

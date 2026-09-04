@@ -48,6 +48,17 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  farmDetails: {
+    fieldName: { type: String, default: '' },
+    village: { type: String, default: '' },
+    district: { type: String, default: '' },
+    state: { type: String, default: 'Karnataka' },
+    lat: { type: Number, default: 0 },
+    lng: { type: Number, default: 0 },
+    boundary: { type: Array, default: [] },
+    crop: { type: String, default: '' },
+    soil: { type: String, default: '' }
+  },
   createdAt: {
     type: Date,
     default: Date.now
