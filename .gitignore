@@ -2,8 +2,10 @@ node_modules/
 .env
 .env.local
 *.log
+logs/
 *.zip
 .DS_Store
+**/.DS_Store
 dist/
 build/
 .vscode/
@@ -12,9 +14,20 @@ package-lock.json
 frontend/node_modules/
 backend/node_modules/
 
-# ML Model files (too large for Git)
+# Raw dataset downloads (too large for Git)
+backend/ml/dataset_downloads/
+
+# ML Model files
 *.pkl
+backend/ml/random_forest_model.pkl
 *.h5
 *.pth
 __pycache__/
 *.pyc
+
+# Whitelist trained model weights needed for runtime (< 30MB)
+!backend/ml/cnn_crop_model.pth
+!backend/ml/crop_verifier.pth
+!backend/ml/mobilenet_v2_disease_best.pth
+!backend/ml/label_encoder.pkl
+

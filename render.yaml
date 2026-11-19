@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: krishisakha-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MONGODB_URI
+        sync: false # Set this in Render Dashboard to your MongoDB Atlas connection string
+      - key: JWT_SECRET
+        generateValue: true
+      - key: IOT_DEVICE_SECRET
+        value: krishi_sakha_device_secret_2026

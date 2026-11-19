@@ -1,17 +1,38 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+export const getSocketBaseUrl = () => {
+  // 1. Highest priority: Explicit environment variable for cloud/production backend
+  if (import.meta.env.VITE_SOCKET_URL && import.meta.env.VITE_SOCKET_URL.trim() !== '') {
+    return import.meta.env.VITE_SOCKET_URL.trim();
+  }
+  // 2. Custom manual IP configured in dashboard for offline LAN mode
+  const customIp = typeof window !== 'undefined' ? localStorage.getItem('krishi_custom_server_ip') : null;
+  if (customIp && customIp.trim() !== '') {
+    const clean = customIp.trim().replace(/^https?:\/\//i, '').replace(/:\d+$/, '').replace(/\/.*$/, '');
+    return `http://${clean}:5001`;
+  }
+  // 3. Localhost development fallback
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5001';
+  }
+  // 4. Dynamic hostname resolution (e.g. krishisakha.local or LAN IP accessing frontend)
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    return `http://${window.location.hostname}:5001`;
+  }
+  return window.location.origin;
+};
 
 let socket = null;
 
 export const connectSocket = (userId) => {
+  const targetUrl = getSocketBaseUrl();
   if (!socket) {
-    socket = io(SOCKET_URL, {
-      transports: ['websocket'],
+    socket = io(targetUrl, {
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 10
     });
 
     socket.on('connect', () => {
@@ -40,6 +61,11 @@ export const disconnectSocket = () => {
   }
 };
 
+export const reconnectSocket = (userId) => {
+  disconnectSocket();
+  return connectSocket(userId);
+};
+
 export const getSocket = () => socket;
 
-export default { connectSocket, disconnectSocket, getSocket };
+export default { connectSocket, disconnectSocket, getSocket, reconnectSocket };

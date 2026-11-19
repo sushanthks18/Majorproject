@@ -1,0 +1,1137 @@
+{
+  "timestamp": "2026-10-31T04:46:56Z",
+  "task1_false_acceptances_count": 29,
+  "task1_false_acceptances": [
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/06ed9d21-53e1-4fa0-89ac-d6d535737637___RS_HL 4296.JPG",
+      "filename": "06ed9d21-53e1-4fa0-89ac-d6d535737637___RS_HL 4296.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.9763,
+      "unsupported_prob": 0.0236,
+      "margin": 0.9527,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9763,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0236
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.54,
+        "luminance_std": 47.8,
+        "brown_pixel_fraction": 0.179
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0be025b3-d592-4a9c-a227-0fdb0958bd86___RS_HL 6195.JPG",
+      "filename": "0be025b3-d592-4a9c-a227-0fdb0958bd86___RS_HL 6195.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.8873,
+      "unsupported_prob": 0.1127,
+      "margin": 0.7746,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.8873,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1127
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.59,
+        "luminance_std": 39.4,
+        "brown_pixel_fraction": 0.002
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0c637217-2a48-4013-b262-945113f45d24___RS_HL 5342.JPG",
+      "filename": "0c637217-2a48-4013-b262-945113f45d24___RS_HL 5342.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.8377,
+      "unsupported_prob": 0.162,
+      "margin": 0.6757,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0003,
+        "Potato": 0.8377,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.162
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.55,
+        "luminance_std": 40.6,
+        "brown_pixel_fraction": 0.134
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0d09567e-a6be-4a18-be05-5931dc1cedd1___RS_HL 5729.JPG",
+      "filename": "0d09567e-a6be-4a18-be05-5931dc1cedd1___RS_HL 5729.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.8675,
+      "unsupported_prob": 0.1324,
+      "margin": 0.7351,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.8675,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1324
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.6,
+        "luminance_std": 52.7,
+        "brown_pixel_fraction": 0.02
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0e141922-8df2-4665-9a26-6895b360116e___RS_HL 5788.JPG",
+      "filename": "0e141922-8df2-4665-9a26-6895b360116e___RS_HL 5788.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.9803,
+      "unsupported_prob": 0.0197,
+      "margin": 0.9606,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9803,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0197
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.6,
+        "luminance_std": 43.1,
+        "brown_pixel_fraction": 0.012
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0e797fe5-ab49-4759-9ba2-057a1e09e69e___RS_HL 5668.JPG",
+      "filename": "0e797fe5-ab49-4759-9ba2-057a1e09e69e___RS_HL 5668.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.9336,
+      "unsupported_prob": 0.0664,
+      "margin": 0.8673,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9336,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0664
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.56,
+        "luminance_std": 54.8,
+        "brown_pixel_fraction": 0.022
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0ebeb001-ee7e-4fda-972d-d4df20f0b7e4___RS_HL 7441.JPG",
+      "filename": "0ebeb001-ee7e-4fda-972d-d4df20f0b7e4___RS_HL 7441.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.6731,
+      "unsupported_prob": 0.3256,
+      "margin": 0.3474,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0009,
+        "Potato": 0.6731,
+        "Rice": 0.0003,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.3256
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 46.0,
+        "brown_pixel_fraction": 0.066
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Soybean___healthy/0f7c2c46-49c8-4baa-9119-753194f4b03c___RS_HL 5731.JPG",
+      "filename": "0f7c2c46-49c8-4baa-9119-753194f4b03c___RS_HL 5731.JPG",
+      "true_crop": "Soybean",
+      "folder": "Soybean___healthy",
+      "pred_crop": "Potato",
+      "top_prob": 0.9995,
+      "unsupported_prob": 0.0005,
+      "margin": 0.999,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9995,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0005
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.61,
+        "luminance_std": 48.3,
+        "brown_pixel_fraction": 0.02
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Strawberry___Leaf_scorch/1d0abac2-181a-4522-b21b-bca85f79cac9___RS_L.Scorch 0861.JPG",
+      "filename": "1d0abac2-181a-4522-b21b-bca85f79cac9___RS_L.Scorch 0861.JPG",
+      "true_crop": "Strawberry",
+      "folder": "Strawberry___Leaf_scorch",
+      "pred_crop": "Potato",
+      "top_prob": 0.8797,
+      "unsupported_prob": 0.1189,
+      "margin": 0.7608,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.8797,
+        "Rice": 0.0001,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0011,
+        "Unsupported": 0.1189
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.48,
+        "luminance_std": 43.0,
+        "brown_pixel_fraction": 0.322
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Strawberry___Leaf_scorch/2d90a8b3-1a11-4c72-9334-42fb50862f6d___RS_L.Scorch 9992.JPG",
+      "filename": "2d90a8b3-1a11-4c72-9334-42fb50862f6d___RS_L.Scorch 9992.JPG",
+      "true_crop": "Strawberry",
+      "folder": "Strawberry___Leaf_scorch",
+      "pred_crop": "Tomato",
+      "top_prob": 0.734,
+      "unsupported_prob": 0.266,
+      "margin": 0.468,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.734,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.266
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.54,
+        "luminance_std": 61.9,
+        "brown_pixel_fraction": 0.168
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Strawberry___Leaf_scorch/2db4d464-0256-4484-8e28-daacafbba8be___RS_L.Scorch 9988.JPG",
+      "filename": "2db4d464-0256-4484-8e28-daacafbba8be___RS_L.Scorch 9988.JPG",
+      "true_crop": "Strawberry",
+      "folder": "Strawberry___Leaf_scorch",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9332,
+      "unsupported_prob": 0.0667,
+      "margin": 0.8664,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9332,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0667
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.52,
+        "luminance_std": 49.5,
+        "brown_pixel_fraction": 0.128
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Strawberry___Leaf_scorch/30e43c7d-0621-4827-8a3a-3ae771996f1e___RS_L.Scorch 9959.JPG",
+      "filename": "30e43c7d-0621-4827-8a3a-3ae771996f1e___RS_L.Scorch 9959.JPG",
+      "true_crop": "Strawberry",
+      "folder": "Strawberry___Leaf_scorch",
+      "pred_crop": "Wheat",
+      "top_prob": 0.9996,
+      "unsupported_prob": 0.0,
+      "margin": 0.9996,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.9996,
+        "Corn": 0.0004,
+        "Cotton": 0.0,
+        "Unsupported": 0.0
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.54,
+        "luminance_std": 74.6,
+        "brown_pixel_fraction": 0.434
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Strawberry___Leaf_scorch/352d0a20-cefd-4829-87d3-aefc65f46901___RS_L.Scorch 1389.JPG",
+      "filename": "352d0a20-cefd-4829-87d3-aefc65f46901___RS_L.Scorch 1389.JPG",
+      "true_crop": "Strawberry",
+      "folder": "Strawberry___Leaf_scorch",
+      "pred_crop": "Potato",
+      "top_prob": 0.9911,
+      "unsupported_prob": 0.0089,
+      "margin": 0.9822,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9911,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0089
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.58,
+        "luminance_std": 43.1,
+        "brown_pixel_fraction": 0.091
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/2e264ee0-7679-4ad2-a19a-1ac4d2e84079___FREC_Scab 2984.JPG",
+      "filename": "2e264ee0-7679-4ad2-a19a-1ac4d2e84079___FREC_Scab 2984.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Potato",
+      "top_prob": 0.6073,
+      "unsupported_prob": 0.0308,
+      "margin": 0.5766,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.3617,
+        "Potato": 0.6073,
+        "Rice": 0.0,
+        "Wheat": 0.0001,
+        "Corn": 0.0,
+        "Cotton": 0.0001,
+        "Unsupported": 0.0308
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.51,
+        "luminance_std": 55.7,
+        "brown_pixel_fraction": 0.015
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/33ebf0dd-f971-4f11-aa93-45df7d55a9ea___FREC_Scab 3182.JPG",
+      "filename": "33ebf0dd-f971-4f11-aa93-45df7d55a9ea___FREC_Scab 3182.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Tomato",
+      "top_prob": 0.8633,
+      "unsupported_prob": 0.1367,
+      "margin": 0.7266,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.8633,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1367
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 23.2,
+        "brown_pixel_fraction": 0.002
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/35fde58e-46ea-4d1b-9580-ead7a2d0cb3b___FREC_Scab 2952.JPG",
+      "filename": "35fde58e-46ea-4d1b-9580-ead7a2d0cb3b___FREC_Scab 2952.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Potato",
+      "top_prob": 0.8538,
+      "unsupported_prob": 0.1458,
+      "margin": 0.708,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0003,
+        "Potato": 0.8538,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1458
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.52,
+        "luminance_std": 43.4,
+        "brown_pixel_fraction": 0.04
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/4147e694-ce1f-47ea-b641-899e60ef3f3a___FREC_Scab 3278.JPG",
+      "filename": "4147e694-ce1f-47ea-b641-899e60ef3f3a___FREC_Scab 3278.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Potato",
+      "top_prob": 0.7614,
+      "unsupported_prob": 0.1732,
+      "margin": 0.5882,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0638,
+        "Potato": 0.7614,
+        "Rice": 0.0,
+        "Wheat": 0.0015,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1732
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.54,
+        "luminance_std": 46.1,
+        "brown_pixel_fraction": 0.04
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/43f68711-decd-4831-bf5c-99fa40abe339___FREC_Scab 3413.JPG",
+      "filename": "43f68711-decd-4831-bf5c-99fa40abe339___FREC_Scab 3413.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9495,
+      "unsupported_prob": 0.0505,
+      "margin": 0.899,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9495,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0505
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.55,
+        "luminance_std": 20.0,
+        "brown_pixel_fraction": 0.041
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/45512c84-e453-459c-b12f-1d08ce44001b___FREC_Scab 3072.JPG",
+      "filename": "45512c84-e453-459c-b12f-1d08ce44001b___FREC_Scab 3072.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9865,
+      "unsupported_prob": 0.0134,
+      "margin": 0.9731,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9865,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0001,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0134
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.5,
+        "luminance_std": 51.5,
+        "brown_pixel_fraction": 0.014
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/5eb564a6-cd74-4c90-95d9-611a6301369d___FREC_Scab 3099.JPG",
+      "filename": "5eb564a6-cd74-4c90-95d9-611a6301369d___FREC_Scab 3099.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Potato",
+      "top_prob": 0.9702,
+      "unsupported_prob": 0.0298,
+      "margin": 0.9404,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9702,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0298
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.57,
+        "luminance_std": 49.1,
+        "brown_pixel_fraction": 0.048
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Apple___Apple_scab/70fa2c8f-5657-444f-b57b-3ad6755acc74___FREC_Scab 3275.JPG",
+      "filename": "70fa2c8f-5657-444f-b57b-3ad6755acc74___FREC_Scab 3275.JPG",
+      "true_crop": "Apple",
+      "folder": "Apple___Apple_scab",
+      "pred_crop": "Potato",
+      "top_prob": 0.8974,
+      "unsupported_prob": 0.1017,
+      "margin": 0.7956,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0008,
+        "Potato": 0.8974,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.1017
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 38.9,
+        "brown_pixel_fraction": 0.055
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Grape___Black_rot/22b31ec6-6351-46d5-ab93-38fefa7ca2ae___FAM_B.Rot 5086.JPG",
+      "filename": "22b31ec6-6351-46d5-ab93-38fefa7ca2ae___FAM_B.Rot 5086.JPG",
+      "true_crop": "Grape",
+      "folder": "Grape___Black_rot",
+      "pred_crop": "Tomato",
+      "top_prob": 0.878,
+      "unsupported_prob": 0.0189,
+      "margin": 0.859,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.878,
+        "Potato": 0.0123,
+        "Rice": 0.0002,
+        "Wheat": 0.0878,
+        "Corn": 0.0023,
+        "Cotton": 0.0004,
+        "Unsupported": 0.0189
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.58,
+        "luminance_std": 38.9,
+        "brown_pixel_fraction": 0.451
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Grape___Black_rot/36be3b48-82d7-4a96-8ef1-87355cfa2c59___FAM_B.Rot 0426.JPG",
+      "filename": "36be3b48-82d7-4a96-8ef1-87355cfa2c59___FAM_B.Rot 0426.JPG",
+      "true_crop": "Grape",
+      "folder": "Grape___Black_rot",
+      "pred_crop": "Potato",
+      "top_prob": 0.6641,
+      "unsupported_prob": 0.3327,
+      "margin": 0.3314,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0014,
+        "Potato": 0.6641,
+        "Rice": 0.0001,
+        "Wheat": 0.0003,
+        "Corn": 0.0,
+        "Cotton": 0.0014,
+        "Unsupported": 0.3327
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 40.3,
+        "brown_pixel_fraction": 0.058
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Grape___Black_rot/3b646501-0c1f-4f1b-889e-26a4a31d03f7___FAM_B.Rot 5084.JPG",
+      "filename": "3b646501-0c1f-4f1b-889e-26a4a31d03f7___FAM_B.Rot 5084.JPG",
+      "true_crop": "Grape",
+      "folder": "Grape___Black_rot",
+      "pred_crop": "Tomato",
+      "top_prob": 0.7238,
+      "unsupported_prob": 0.2282,
+      "margin": 0.4956,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.7238,
+        "Potato": 0.0436,
+        "Rice": 0.0004,
+        "Wheat": 0.0026,
+        "Corn": 0.0,
+        "Cotton": 0.0012,
+        "Unsupported": 0.2282
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.57,
+        "luminance_std": 44.3,
+        "brown_pixel_fraction": 0.385
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Peach___Bacterial_spot/16880e86-a076-4a7e-bb54-f3f61acd859f___Rut._Bact.S 1338.JPG",
+      "filename": "16880e86-a076-4a7e-bb54-f3f61acd859f___Rut._Bact.S 1338.JPG",
+      "true_crop": "Peach",
+      "folder": "Peach___Bacterial_spot",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9471,
+      "unsupported_prob": 0.0529,
+      "margin": 0.8941,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9471,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0529
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 30.7,
+        "brown_pixel_fraction": 0.095
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Peach___Bacterial_spot/1de316f5-999e-4f17-be76-07ada66b5663___Rutg._Bact.S 2206.JPG",
+      "filename": "1de316f5-999e-4f17-be76-07ada66b5663___Rutg._Bact.S 2206.JPG",
+      "true_crop": "Peach",
+      "folder": "Peach___Bacterial_spot",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9066,
+      "unsupported_prob": 0.0932,
+      "margin": 0.8134,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9066,
+        "Potato": 0.0002,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0932
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.53,
+        "luminance_std": 22.9,
+        "brown_pixel_fraction": 0.16
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Peach___Bacterial_spot/1df78012-4b87-40f4-bfa1-b868465c0b4d___Rut._Bact.S 1263.JPG",
+      "filename": "1df78012-4b87-40f4-bfa1-b868465c0b4d___Rut._Bact.S 1263.JPG",
+      "true_crop": "Peach",
+      "folder": "Peach___Bacterial_spot",
+      "pred_crop": "Tomato",
+      "top_prob": 0.9914,
+      "unsupported_prob": 0.0086,
+      "margin": 0.9828,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.9914,
+        "Potato": 0.0,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0086
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.54,
+        "luminance_std": 32.7,
+        "brown_pixel_fraction": 0.008
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Orange___Haunglongbing_(Citrus_greening)/0a513139-b535-433b-a7a9-41b2a0e13585___UF.Citrus_HLB_Lab 0835.JPG",
+      "filename": "0a513139-b535-433b-a7a9-41b2a0e13585___UF.Citrus_HLB_Lab 0835.JPG",
+      "true_crop": "Orange",
+      "folder": "Orange___Haunglongbing_(Citrus_greening)",
+      "pred_crop": "Potato",
+      "top_prob": 0.7426,
+      "unsupported_prob": 0.2565,
+      "margin": 0.4861,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0001,
+        "Potato": 0.7426,
+        "Rice": 0.0004,
+        "Wheat": 0.0,
+        "Corn": 0.0004,
+        "Cotton": 0.0,
+        "Unsupported": 0.2565
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.77,
+        "luminance_std": 10.7,
+        "brown_pixel_fraction": 0.074
+      }
+    },
+    {
+      "filepath": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color/Orange___Haunglongbing_(Citrus_greening)/0b7c3223-4ece-4051-95df-a870f7e239e8___CREC_HLB 5449.JPG",
+      "filename": "0b7c3223-4ece-4051-95df-a870f7e239e8___CREC_HLB 5449.JPG",
+      "true_crop": "Orange",
+      "folder": "Orange___Haunglongbing_(Citrus_greening)",
+      "pred_crop": "Potato",
+      "top_prob": 0.9492,
+      "unsupported_prob": 0.0507,
+      "margin": 0.8985,
+      "is_supported": true,
+      "probs": {
+        "Tomato": 0.0,
+        "Potato": 0.9492,
+        "Rice": 0.0,
+        "Wheat": 0.0,
+        "Corn": 0.0,
+        "Cotton": 0.0,
+        "Unsupported": 0.0507
+      },
+      "visual_stats": {
+        "dimensions": "256x256",
+        "greenness_ratio": 0.51,
+        "luminance_std": 36.0,
+        "brown_pixel_fraction": 0.939
+      }
+    }
+  ],
+  "task2_threshold_experiments": [
+    {
+      "rule_name": "Current Baseline (tau_u<0.35, conf>=0.50)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 29,
+      "unsupported_far_pct": 2.07,
+      "supported_fr_count": 5,
+      "supported_frr_pct": 0.31,
+      "supported_crop_accuracy_pct": 99.25,
+      "fa_by_crop": {
+        "Soybean": 8,
+        "Strawberry": 5,
+        "Apple": 8,
+        "Grape": 3,
+        "Peach": 3,
+        "Orange": 2
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 3
+      }
+    },
+    {
+      "rule_name": "Tighter Unsupported Gate (tau_u<0.25, conf>=0.50)",
+      "tau_unsupported_max": 0.25,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 25,
+      "unsupported_far_pct": 1.79,
+      "supported_fr_count": 5,
+      "supported_frr_pct": 0.31,
+      "supported_crop_accuracy_pct": 99.25,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 8,
+        "Grape": 2,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 3
+      }
+    },
+    {
+      "rule_name": "Tighter Unsupported Gate (tau_u<0.20, conf>=0.50)",
+      "tau_unsupported_max": 0.2,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 24,
+      "unsupported_far_pct": 1.71,
+      "supported_fr_count": 6,
+      "supported_frr_pct": 0.38,
+      "supported_crop_accuracy_pct": 99.18,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 8,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 4
+      }
+    },
+    {
+      "rule_name": "Strict Unsupported Gate (tau_u<0.15, conf>=0.50)",
+      "tau_unsupported_max": 0.15,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 22,
+      "unsupported_far_pct": 1.57,
+      "supported_fr_count": 7,
+      "supported_frr_pct": 0.44,
+      "supported_crop_accuracy_pct": 99.12,
+      "fa_by_crop": {
+        "Soybean": 6,
+        "Strawberry": 4,
+        "Apple": 7,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 5
+      }
+    },
+    {
+      "rule_name": "Very Strict Unsupported Gate (tau_u<0.10, conf>=0.50)",
+      "tau_unsupported_max": 0.1,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 16,
+      "unsupported_far_pct": 1.14,
+      "supported_fr_count": 7,
+      "supported_frr_pct": 0.44,
+      "supported_crop_accuracy_pct": 99.12,
+      "fa_by_crop": {
+        "Soybean": 4,
+        "Strawberry": 3,
+        "Apple": 4,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 5
+      }
+    },
+    {
+      "rule_name": "Elevated Supported Conf (tau_u<0.35, conf>=0.65)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.65,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 28,
+      "unsupported_far_pct": 2.0,
+      "supported_fr_count": 10,
+      "supported_frr_pct": 0.63,
+      "supported_crop_accuracy_pct": 99.0,
+      "fa_by_crop": {
+        "Soybean": 8,
+        "Strawberry": 5,
+        "Apple": 7,
+        "Grape": 3,
+        "Peach": 3,
+        "Orange": 2
+      },
+      "fr_by_crop": {
+        "Potato": 5,
+        "Tomato": 3,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Disease Model Parity Conf (tau_u<0.35, conf>=0.70)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.7,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 26,
+      "unsupported_far_pct": 1.86,
+      "supported_fr_count": 11,
+      "supported_frr_pct": 0.69,
+      "supported_crop_accuracy_pct": 98.93,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 5,
+        "Apple": 7,
+        "Grape": 2,
+        "Peach": 3,
+        "Orange": 2
+      },
+      "fr_by_crop": {
+        "Potato": 5,
+        "Tomato": 4,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Elevated Supported Conf (tau_u<0.35, conf>=0.75)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.75,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 23,
+      "unsupported_far_pct": 1.64,
+      "supported_fr_count": 12,
+      "supported_frr_pct": 0.75,
+      "supported_crop_accuracy_pct": 98.87,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 7,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 6,
+        "Tomato": 4,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Strict Supported Conf (tau_u<0.35, conf>=0.80)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.8,
+      "tau_margin_min": 0.0,
+      "unsupported_fa_count": 22,
+      "unsupported_far_pct": 1.57,
+      "supported_fr_count": 15,
+      "supported_frr_pct": 0.94,
+      "supported_crop_accuracy_pct": 98.75,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 6,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 6,
+        "Tomato": 7,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Margin Gate (tau_u<0.35, conf>=0.50, margin>=0.30)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.3,
+      "unsupported_fa_count": 29,
+      "unsupported_far_pct": 2.07,
+      "supported_fr_count": 5,
+      "supported_frr_pct": 0.31,
+      "supported_crop_accuracy_pct": 99.25,
+      "fa_by_crop": {
+        "Soybean": 8,
+        "Strawberry": 5,
+        "Apple": 8,
+        "Grape": 3,
+        "Peach": 3,
+        "Orange": 2
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 3
+      }
+    },
+    {
+      "rule_name": "Margin Gate (tau_u<0.35, conf>=0.50, margin>=0.40)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.4,
+      "unsupported_fa_count": 27,
+      "unsupported_far_pct": 1.93,
+      "supported_fr_count": 5,
+      "supported_frr_pct": 0.31,
+      "supported_crop_accuracy_pct": 99.25,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 5,
+        "Apple": 8,
+        "Grape": 2,
+        "Peach": 3,
+        "Orange": 2
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 3
+      }
+    },
+    {
+      "rule_name": "Margin Gate (tau_u<0.35, conf>=0.50, margin>=0.50)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.5,
+      "unsupported_fa_count": 24,
+      "unsupported_far_pct": 1.71,
+      "supported_fr_count": 5,
+      "supported_frr_pct": 0.31,
+      "supported_crop_accuracy_pct": 99.25,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 8,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 2,
+        "Tomato": 3
+      }
+    },
+    {
+      "rule_name": "Margin Gate (tau_u<0.35, conf>=0.50, margin>=0.60)",
+      "tau_unsupported_max": 0.35,
+      "tau_confidence_min": 0.5,
+      "tau_margin_min": 0.6,
+      "unsupported_fa_count": 22,
+      "unsupported_far_pct": 1.57,
+      "supported_fr_count": 7,
+      "supported_frr_pct": 0.44,
+      "supported_crop_accuracy_pct": 99.12,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 6,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 3,
+        "Tomato": 4
+      }
+    },
+    {
+      "rule_name": "Balanced Dual Gate (tau_u<0.20, conf>=0.65, margin>=0.40)",
+      "tau_unsupported_max": 0.2,
+      "tau_confidence_min": 0.65,
+      "tau_margin_min": 0.4,
+      "unsupported_fa_count": 23,
+      "unsupported_far_pct": 1.64,
+      "supported_fr_count": 11,
+      "supported_frr_pct": 0.69,
+      "supported_crop_accuracy_pct": 98.93,
+      "fa_by_crop": {
+        "Soybean": 7,
+        "Strawberry": 4,
+        "Apple": 7,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 5,
+        "Tomato": 4,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Strict Dual Gate (tau_u<0.15, conf>=0.70, margin>=0.50)",
+      "tau_unsupported_max": 0.15,
+      "tau_confidence_min": 0.7,
+      "tau_margin_min": 0.5,
+      "unsupported_fa_count": 21,
+      "unsupported_far_pct": 1.5,
+      "supported_fr_count": 13,
+      "supported_frr_pct": 0.82,
+      "supported_crop_accuracy_pct": 98.81,
+      "fa_by_crop": {
+        "Soybean": 6,
+        "Strawberry": 4,
+        "Apple": 6,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 5,
+        "Tomato": 6,
+        "Rice": 2
+      }
+    },
+    {
+      "rule_name": "Ultra Conservative Gate (tau_u<0.10, conf>=0.75, margin>=0.60)",
+      "tau_unsupported_max": 0.1,
+      "tau_confidence_min": 0.75,
+      "tau_margin_min": 0.6,
+      "unsupported_fa_count": 15,
+      "unsupported_far_pct": 1.07,
+      "supported_fr_count": 14,
+      "supported_frr_pct": 0.88,
+      "supported_crop_accuracy_pct": 98.75,
+      "fa_by_crop": {
+        "Soybean": 4,
+        "Strawberry": 3,
+        "Apple": 3,
+        "Grape": 1,
+        "Peach": 3,
+        "Orange": 1
+      },
+      "fr_by_crop": {
+        "Potato": 6,
+        "Tomato": 6,
+        "Rice": 2
+      }
+    }
+  ]
+}

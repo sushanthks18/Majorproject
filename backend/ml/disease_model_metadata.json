@@ -1,0 +1,89 @@
+{
+  "model_name": "MobileNetV2 Agricultural Leaf Disease Classifier",
+  "checkpoint_file": "mobilenet_v2_disease_best.pth",
+  "checkpoint_size_bytes": 27332075,
+  "checkpoint_size_mb": 26.07,
+  "best_epoch": 6,
+  "best_val_macro_f1": 0.9370235000574848,
+  "training_device": "Apple Silicon GPU (MPS)",
+  "random_seed": 42,
+  "dataset_manifests": {
+    "master_manifest": "backend/ml/dataset_split_manifest.csv",
+    "train_manifest": "backend/ml/train_split.csv",
+    "val_manifest": "backend/ml/val_split.csv",
+    "test_manifest": "backend/ml/test_split.csv"
+  },
+  "num_supported_classes": 17,
+  "supported_classes": [
+    "Tomato___Early_Blight",
+    "Tomato___Late_Blight",
+    "Tomato___Healthy",
+    "Potato___Early_Blight",
+    "Potato___Late_Blight",
+    "Potato___Healthy",
+    "Rice___Blast",
+    "Rice___Bacterial_Blight",
+    "Rice___Brown_Spot",
+    "Rice___Healthy",
+    "Wheat___Leaf_Rust",
+    "Wheat___Powdery_Mildew",
+    "Wheat___Healthy",
+    "Corn___Common_Rust",
+    "Corn___Healthy",
+    "Cotton___Bacterial_Blight",
+    "Cotton___Healthy"
+  ],
+  "class_to_idx": {
+    "Tomato___Early_Blight": 0,
+    "Tomato___Late_Blight": 1,
+    "Tomato___Healthy": 2,
+    "Potato___Early_Blight": 3,
+    "Potato___Late_Blight": 4,
+    "Potato___Healthy": 5,
+    "Rice___Blast": 6,
+    "Rice___Bacterial_Blight": 7,
+    "Rice___Brown_Spot": 8,
+    "Rice___Healthy": 9,
+    "Wheat___Leaf_Rust": 10,
+    "Wheat___Powdery_Mildew": 11,
+    "Wheat___Healthy": 12,
+    "Corn___Common_Rust": 13,
+    "Corn___Healthy": 14,
+    "Cotton___Bacterial_Blight": 15,
+    "Cotton___Healthy": 16
+  },
+  "idx_to_class": {
+    "0": "Tomato___Early_Blight",
+    "1": "Tomato___Late_Blight",
+    "2": "Tomato___Healthy",
+    "3": "Potato___Early_Blight",
+    "4": "Potato___Late_Blight",
+    "5": "Potato___Healthy",
+    "6": "Rice___Blast",
+    "7": "Rice___Bacterial_Blight",
+    "8": "Rice___Brown_Spot",
+    "9": "Rice___Healthy",
+    "10": "Wheat___Leaf_Rust",
+    "11": "Wheat___Powdery_Mildew",
+    "12": "Wheat___Healthy",
+    "13": "Corn___Common_Rust",
+    "14": "Corn___Healthy",
+    "15": "Cotton___Bacterial_Blight",
+    "16": "Cotton___Healthy"
+  },
+  "unsupported_classes": {
+    "Ragi___Blast": "NOT SUPPORTED YET (Requires verified Eleusine coracana field data)",
+    "Ragi___Healthy": "NOT SUPPORTED YET (Requires verified Eleusine coracana field data)"
+  },
+  "taxonomy_compliance": {
+    "total_taxonomy_classes": 19,
+    "supported_classes_count": 17,
+    "unsupported_classes_count": 2,
+    "ordering_preserved": true
+  },
+  "dependencies": {
+    "python": "3.14.4",
+    "torch": "2.14.0",
+    "torchvision": "0.29.0"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "split_manifest_version": "1.0",
+  "random_seed": 42,
+  "hamming_threshold": 4,
+  "total_images_in_dataset": 10877,
+  "split_counts": {
+    "train": 7444,
+    "val": 1594,
+    "test": 1597,
+    "excluded": 242
+  },
+  "split_proportions": {
+    "train": "70.00%",
+    "val": "14.99%",
+    "test": "15.02%"
+  },
+  "leakage_verification": {
+    "sha256_overlap_train_val": 0,
+    "sha256_overlap_train_test": 0,
+    "sha256_overlap_val_test": 0,
+    "near_duplicate_clusters_split_across_partitions": 0,
+    "intra_class_near_duplicate_cross_split_pairs": 0
+  },
+  "class_breakdown": {
+    "Tomato___Early_Blight": {
+      "train": 700,
+      "val": 150,
+      "test": 150,
+      "total_usable": 1000,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 999,
+      "status": "SUPPORTED"
+    },
+    "Tomato___Late_Blight": {
+      "train": 1331,
+      "val": 285,
+      "test": 285,
+      "total_usable": 1901,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 1862,
+      "status": "SUPPORTED"
+    },
+    "Tomato___Healthy": {
+      "train": 1110,
+      "val": 238,
+      "test": 237,
+      "total_usable": 1585,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 1581,
+      "status": "SUPPORTED"
+    },
+    "Potato___Early_Blight": {
+      "train": 700,
+      "val": 150,
+      "test": 150,
+      "total_usable": 1000,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 998,
+      "status": "SUPPORTED"
+    },
+    "Potato___Late_Blight": {
+      "train": 700,
+      "val": 150,
+      "test": 150,
+      "total_usable": 1000,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 1000,
+      "status": "SUPPORTED"
+    },
+    "Potato___Healthy": {
+      "train": 106,
+      "val": 23,
+      "test": 23,
+      "total_usable": 152,
+      "train_pct": "69.7%",
+      "val_pct": "15.1%",
+      "test_pct": "15.1%",
+      "clusters_count": 151,
+      "status": "SUPPORTED"
+    },
+    "Rice___Blast": {
+      "train": 189,
+      "val": 40,
+      "test": 41,
+      "total_usable": 270,
+      "train_pct": "70.0%",
+      "val_pct": "14.8%",
+      "test_pct": "15.2%",
+      "clusters_count": 213,
+      "status": "SUPPORTED"
+    },
+    "Rice___Bacterial_Blight": {
+      "train": 125,
+      "val": 27,
+      "test": 27,
+      "total_usable": 179,
+      "train_pct": "69.8%",
+      "val_pct": "15.1%",
+      "test_pct": "15.1%",
+      "clusters_count": 164,
+      "status": "SUPPORTED"
+    },
+    "Rice___Brown_Spot": {
+      "train": 182,
+      "val": 39,
+      "test": 39,
+      "total_usable": 260,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 184,
+      "status": "SUPPORTED"
+    },
+    "Rice___Healthy": {
+      "train": 108,
+      "val": 23,
+      "test": 23,
+      "total_usable": 154,
+      "train_pct": "70.1%",
+      "val_pct": "14.9%",
+      "test_pct": "14.9%",
+      "clusters_count": 142,
+      "status": "SUPPORTED"
+    },
+    "Wheat___Leaf_Rust": {
+      "train": 90,
+      "val": 19,
+      "test": 19,
+      "total_usable": 128,
+      "train_pct": "70.3%",
+      "val_pct": "14.8%",
+      "test_pct": "14.8%",
+      "clusters_count": 128,
+      "status": "SUPPORTED"
+    },
+    "Wheat___Powdery_Mildew": {
+      "train": 113,
+      "val": 24,
+      "test": 24,
+      "total_usable": 161,
+      "train_pct": "70.2%",
+      "val_pct": "14.9%",
+      "test_pct": "14.9%",
+      "clusters_count": 161,
+      "status": "SUPPORTED"
+    },
+    "Wheat___Healthy": {
+      "train": 85,
+      "val": 18,
+      "test": 19,
+      "total_usable": 122,
+      "train_pct": "69.7%",
+      "val_pct": "14.8%",
+      "test_pct": "15.6%",
+      "clusters_count": 122,
+      "status": "SUPPORTED"
+    },
+    "Corn___Common_Rust": {
+      "train": 834,
+      "val": 179,
+      "test": 179,
+      "total_usable": 1192,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.0%",
+      "clusters_count": 873,
+      "status": "SUPPORTED"
+    },
+    "Corn___Healthy": {
+      "train": 813,
+      "val": 174,
+      "test": 175,
+      "total_usable": 1162,
+      "train_pct": "70.0%",
+      "val_pct": "15.0%",
+      "test_pct": "15.1%",
+      "clusters_count": 1158,
+      "status": "SUPPORTED"
+    },
+    "Cotton___Bacterial_Blight": {
+      "train": 136,
+      "val": 29,
+      "test": 30,
+      "total_usable": 195,
+      "train_pct": "69.7%",
+      "val_pct": "14.9%",
+      "test_pct": "15.4%",
+      "clusters_count": 181,
+      "status": "SUPPORTED"
+    },
+    "Cotton___Healthy": {
+      "train": 122,
+      "val": 26,
+      "test": 26,
+      "total_usable": 174,
+      "train_pct": "70.1%",
+      "val_pct": "14.9%",
+      "test_pct": "14.9%",
+      "clusters_count": 155,
+      "status": "SUPPORTED"
+    },
+    "Ragi___Blast": {
+      "train": 0,
+      "val": 0,
+      "test": 0,
+      "excluded": 0,
+      "status": "NOT_SUPPORTED_YET"
+    },
+    "Ragi___Healthy": {
+      "train": 0,
+      "val": 0,
+      "test": 0,
+      "excluded": 0,
+      "status": "NOT_SUPPORTED_YET"
+    }
+  }
+}

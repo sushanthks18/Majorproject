@@ -1,0 +1,179 @@
+{
+  "timestamp": "2026-10-31T16:23:43Z",
+  "margin_threshold": 0.5,
+  "unsupported_evaluation": {
+    "total_unseen_tested": 1400,
+    "old_baseline_false_accepted": 29,
+    "old_baseline_far_pct": 2.07,
+    "new_margin_false_accepted": 24,
+    "new_margin_far_pct": 1.71,
+    "false_acceptances_eliminated": 5,
+    "crop_breakdown": {
+      "Soybean": {
+        "tested": 200,
+        "old_false_accepted": 8,
+        "old_far_pct": 4.0,
+        "old_rejection_pct": 96.0,
+        "new_false_accepted": 7,
+        "new_far_pct": 3.5,
+        "new_rejection_pct": 96.5,
+        "improvement_pct": 0.5
+      },
+      "Strawberry": {
+        "tested": 200,
+        "old_false_accepted": 5,
+        "old_far_pct": 2.5,
+        "old_rejection_pct": 97.5,
+        "new_false_accepted": 4,
+        "new_far_pct": 2.0,
+        "new_rejection_pct": 98.0,
+        "improvement_pct": 0.5
+      },
+      "Apple": {
+        "tested": 200,
+        "old_false_accepted": 8,
+        "old_far_pct": 4.0,
+        "old_rejection_pct": 96.0,
+        "new_false_accepted": 8,
+        "new_far_pct": 4.0,
+        "new_rejection_pct": 96.0,
+        "improvement_pct": 0.0
+      },
+      "Grape": {
+        "tested": 200,
+        "old_false_accepted": 3,
+        "old_far_pct": 1.5,
+        "old_rejection_pct": 98.5,
+        "new_false_accepted": 1,
+        "new_far_pct": 0.5,
+        "new_rejection_pct": 99.5,
+        "improvement_pct": 1.0
+      },
+      "Peach": {
+        "tested": 200,
+        "old_false_accepted": 3,
+        "old_far_pct": 1.5,
+        "old_rejection_pct": 98.5,
+        "new_false_accepted": 3,
+        "new_far_pct": 1.5,
+        "new_rejection_pct": 98.5,
+        "improvement_pct": 0.0
+      },
+      "Pepper_Bell": {
+        "tested": 200,
+        "old_false_accepted": 0,
+        "old_far_pct": 0.0,
+        "old_rejection_pct": 100.0,
+        "new_false_accepted": 0,
+        "new_far_pct": 0.0,
+        "new_rejection_pct": 100.0,
+        "improvement_pct": 0.0
+      },
+      "Orange": {
+        "tested": 200,
+        "old_false_accepted": 2,
+        "old_far_pct": 1.0,
+        "old_rejection_pct": 99.0,
+        "new_false_accepted": 1,
+        "new_far_pct": 0.5,
+        "new_rejection_pct": 99.5,
+        "improvement_pct": 0.5
+      }
+    },
+    "flipped_to_safe_samples": [
+      {
+        "file": "0ebeb001-ee7e-4fda-972d-d4df20f0b7e4___RS_HL 7441.JPG",
+        "crop": "Soybean",
+        "raw_crop": "Potato",
+        "conf": 67.3,
+        "unsupported_prob": 32.6,
+        "margin": 34.7
+      },
+      {
+        "file": "2d90a8b3-1a11-4c72-9334-42fb50862f6d___RS_L.Scorch 9992.JPG",
+        "crop": "Strawberry",
+        "raw_crop": "Tomato",
+        "conf": 73.4,
+        "unsupported_prob": 26.6,
+        "margin": 46.8
+      },
+      {
+        "file": "36be3b48-82d7-4a96-8ef1-87355cfa2c59___FAM_B.Rot 0426.JPG",
+        "crop": "Grape",
+        "raw_crop": "Potato",
+        "conf": 66.4,
+        "unsupported_prob": 33.3,
+        "margin": 33.1
+      },
+      {
+        "file": "3b646501-0c1f-4f1b-889e-26a4a31d03f7___FAM_B.Rot 5084.JPG",
+        "crop": "Grape",
+        "raw_crop": "Tomato",
+        "conf": 72.4,
+        "unsupported_prob": 22.8,
+        "margin": 49.6
+      },
+      {
+        "file": "0a513139-b535-433b-a7a9-41b2a0e13585___UF.Citrus_HLB_Lab 0835.JPG",
+        "crop": "Orange",
+        "raw_crop": "Potato",
+        "conf": 74.3,
+        "unsupported_prob": 25.7,
+        "margin": 48.6
+      }
+    ]
+  },
+  "validation_supported_evaluation": {
+    "total_val_samples": 1594,
+    "old_false_rejections": 5,
+    "old_frr_pct": 0.31,
+    "new_false_rejections": 5,
+    "new_frr_pct": 0.31,
+    "net_frr_increase": 0,
+    "crop_accuracy_pct": 99.25,
+    "crop_breakdown": {
+      "Potato": {
+        "total": 323,
+        "old_correct": 316,
+        "new_correct": 316,
+        "old_fr": 2,
+        "new_fr": 2
+      },
+      "Corn": {
+        "total": 353,
+        "old_correct": 353,
+        "new_correct": 353,
+        "old_fr": 0,
+        "new_fr": 0
+      },
+      "Tomato": {
+        "total": 673,
+        "old_correct": 668,
+        "new_correct": 668,
+        "old_fr": 3,
+        "new_fr": 3
+      },
+      "Cotton": {
+        "total": 55,
+        "old_correct": 55,
+        "new_correct": 55,
+        "old_fr": 0,
+        "new_fr": 0
+      },
+      "Rice": {
+        "total": 129,
+        "old_correct": 129,
+        "new_correct": 129,
+        "old_fr": 0,
+        "new_fr": 0
+      },
+      "Wheat": {
+        "total": 61,
+        "old_correct": 61,
+        "new_correct": 61,
+        "old_fr": 0,
+        "new_fr": 0
+      }
+    }
+  }
+}

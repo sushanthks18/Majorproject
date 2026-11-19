@@ -1,0 +1,46 @@
+{
+  "model_name": "Krishi Sakha Botanical Crop Verifier (Stage 2)",
+  "checkpoint_file": "crop_verifier.pth",
+  "checkpoint_size_bytes": 2650019,
+  "base_backbone": "MobileNetV2 (ImageNet Pretrained DEFAULT)",
+  "num_classes": 7,
+  "classes": [
+    "Tomato",
+    "Potato",
+    "Rice",
+    "Wheat",
+    "Corn",
+    "Cotton",
+    "Unsupported"
+  ],
+  "class_to_idx": {
+    "Tomato": 0,
+    "Potato": 1,
+    "Rice": 2,
+    "Wheat": 3,
+    "Corn": 4,
+    "Cotton": 5,
+    "Unsupported": 6
+  },
+  "supported_crops": [
+    "Tomato",
+    "Potato",
+    "Rice",
+    "Wheat",
+    "Corn",
+    "Cotton"
+  ],
+  "unsupported_class_index": 6,
+  "decision_rule": "P(best_supported_crop) - P(Unsupported) >= 0.50",
+  "margin_threshold": 0.50,
+  "min_confidence_threshold": 0.50,
+  "val_total": 1594,
+  "val_accuracy": 99.25,
+  "val_false_rejection_rate": 0.31,
+  "held_out_soybean_count": 200,
+  "held_out_soybean_rejection_rate": 96.5,
+  "training_device": "mps",
+  "random_seed": 42,
+  "created_at": "2026-10-31T03:22:17Z",
+  "updated_at": "2026-10-31T21:50:00Z"
+}

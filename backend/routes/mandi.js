@@ -120,6 +120,23 @@ async function fetchRealMandiPrices(crop, state = 'Karnataka', limit = 100) {
 
     console.log(`✅ Fetched ${data.records.length} real price records for ${crop}`);
     
+    // Helper to parse DD/MM/YYYY format commonly returned by data.gov.in AGMARKNET API
+    const parseArrivalDate = (str) => {
+      if (!str) return new Date();
+      if (typeof str === 'string' && str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const d = new Date(year, month, day);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+      const parsed = new Date(str);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    };
+
     // Transform API data to our format
     const prices = data.records.map(record => ({
       crop: crop,
@@ -127,7 +144,7 @@ async function fetchRealMandiPrices(crop, state = 'Karnataka', limit = 100) {
       price: parseFloat(record.modal_price) || 0,
       minPrice: parseFloat(record.min_price) || 0,
       maxPrice: parseFloat(record.max_price) || 0,
-      date: record.arrival_date ? new Date(record.arrival_date) : new Date(),
+      date: parseArrivalDate(record.arrival_date),
       state: record.state,
       district: record.district,
       variety: record.variety || 'General',

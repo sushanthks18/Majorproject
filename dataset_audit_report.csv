@@ -1,0 +1,20 @@
+class_name,crop,valid_images,corrupt_images,exact_duplicates,train_count,val_count,test_count,unassigned_split_count,audit_status,notes
+Tomato___Early_Blight,Tomato,1000,0,0,0,0,0,1000,ADEQUATE_VOLUME,1000 images with valid format
+Tomato___Late_Blight,Tomato,1909,0,8,0,0,0,1909,ADEQUATE_VOLUME,1909 images with valid format; 8 exact duplicate files
+Tomato___Healthy,Tomato,1591,0,6,0,0,0,1591,ADEQUATE_VOLUME,1591 images with valid format; 6 exact duplicate files
+Potato___Early_Blight,Potato,1000,0,0,0,0,0,1000,ADEQUATE_VOLUME,1000 images with valid format
+Potato___Late_Blight,Potato,1000,0,0,0,0,0,1000,ADEQUATE_VOLUME,1000 images with valid format
+Potato___Healthy,Potato,152,0,0,0,0,0,152,ADEQUATE_VOLUME,152 images with valid format
+Rice___Blast,Rice,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Rice___Bacterial_Blight,Rice,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Rice___Brown_Spot,Rice,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Rice___Healthy,Rice,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Wheat___Leaf_Rust,Wheat,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Wheat___Powdery_Mildew,Wheat,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Wheat___Healthy,Wheat,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Corn___Common_Rust,Corn,1192,0,0,0,0,0,1192,ADEQUATE_VOLUME,1192 images with valid format
+Corn___Healthy,Corn,1162,0,0,0,0,0,1162,ADEQUATE_VOLUME,1162 images with valid format
+Cotton___Bacterial_Blight,Cotton,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Cotton___Healthy,Cotton,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Ragi___Blast,Ragi,0,0,0,0,0,0,0,MISSING,0 images found in dataset
+Ragi___Healthy,Ragi,0,0,0,0,0,0,0,MISSING,0 images found in dataset

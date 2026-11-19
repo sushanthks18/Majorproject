@@ -1,6 +1,8 @@
 import express from 'express';
+import os from 'os';
 import SensorData from '../models/SensorData.js';
 import AggregatedSensorData from '../models/AggregatedSensorData.js';
+import User from '../models/User.js';
 import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 import { aggregateSensorData, storeAggregatedData, getLatestAggregation, compareAggregatedWithRealtime } from '../services/sensorAggregation.js';
 
@@ -9,27 +11,37 @@ const router = express.Router();
 // Get latest sensor reading (Public endpoint - no auth required for ESP32)
 router.get('/latest', async (req, res) => {
   try {
-    // Get the most recent sensor data from ANY source
-    const latestData = await SensorData.findOne().sort({ timestamp: -1 });
+    const farmerId = req.query.farmerId || (req.user?.role === 'farmer' ? req.userId : null);
+    let query = {};
+    if (farmerId) {
+      query = { farmerId };
+    }
+
+    let latestData = await SensorData.findOne(query).sort({ timestamp: -1 });
+    // If not found for specific farmer, fallback to any latest IoT sensor reading
+    if (!latestData && farmerId) {
+      latestData = await SensorData.findOne().sort({ timestamp: -1 });
+    }
 
     if (!latestData) {
-      // Return default/simulated data instead of 404
+      // Return null sensor readings instead of fake numbers
       return res.json({ 
-        data: {
-          temperature: 25,
-          humidity: 60,
-          soilMoisture: 45,
-          pH: 7.0,
-          rainfall: 0,
-          timestamp: new Date(),
-          _id: null,
-          source: 'default'
-        },
-        message: 'No sensor data available. Showing default values.'
+        temperature: null,
+        humidity: null,
+        soilMoisture: null,
+        pH: null,
+        rainfall: 0,
+        rainLevel: 0,
+        nitrogen: null,
+        phosphorus: null,
+        potassium: null,
+        timestamp: null,
+        source: 'none',
+        message: 'No sensor data available yet. Waiting for ESP32 transmission.'
       });
     }
 
-    // Return the data directly (not nested)
+    // Return the real newest reading directly
     res.json(latestData);
   } catch (error) {
     console.error('Error fetching latest sensor data:', error);
@@ -82,99 +94,217 @@ router.get('/history', authenticate, async (req, res) => {
   }
 });
 
-// Store sensor data (Public endpoint for IoT devices - ESP32 compatible)
-router.post('/data', async (req, res) => {
+// Health ping endpoint for quick dashboard auto-connect checks
+router.get('/ping', (req, res) => {
+  res.json({ status: 'ok', serverTime: new Date() });
+});
+
+// Auto-detect computer/server real Wi-Fi IP address (filters out dummy bridges and virtual interfaces)
+router.get('/network-ip', (req, res) => {
   try {
-    let { temperature, humidity, soilMoisture, pH, farmerId, deviceId, apiKey, rainLevel, rainfall, source } = req.body;
+    const interfaces = os.networkInterfaces();
+    const realIps = [];
 
+    // Filter out dummy virtual bridges, VM networks, and tunnels
+    const ignoredPrefixes = ['bridge', 'utun', 'tun', 'tap', 'docker', 'vbox', 'vmnet', 'awdl', 'llw', 'lo', 'gif', 'stf'];
+
+    for (const name of Object.keys(interfaces)) {
+      if (ignoredPrefixes.some(prefix => name.toLowerCase().startsWith(prefix))) {
+        continue;
+      }
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          // Ignore link-local APIPA addresses
+          if (!iface.address.startsWith('169.254')) {
+            const isWifi = name === 'en0' || name.toLowerCase().includes('wi') || name.toLowerCase().includes('wlan');
+            realIps.push({
+              interface: isWifi ? `Wi-Fi (${name})` : name,
+              ip: iface.address,
+              isPrimary: isWifi
+            });
+          }
+        }
+      }
+    }
+
+    // Determine the real primary IP: prefer Wi-Fi (en0), then first physical interface
+    const wifi = realIps.find(i => i.isPrimary) || realIps.find(i => i.interface.includes('en0')) || (realIps.length > 0 ? realIps[0] : null);
+    const primaryIp = wifi ? wifi.ip : '127.0.0.1';
+    const port = process.env.PORT || 5001;
+
+    res.json({
+      success: true,
+      currentIp: primaryIp,
+      allIps: realIps,
+      port: port,
+      arduinoEndpoint: `http://${primaryIp}:${port}/api/sensors/data`
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to detect IP', message: error.message });
+  }
+});
+
+// Device Authentication Middleware for IoT Nodes
+const authenticateDevice = (req, res, next) => {
+  const secret = process.env.IOT_DEVICE_SECRET;
+  if (!secret) {
+    return next(); // If no secret configured in .env, permit (development fallback)
+  }
+
+  const token = req.headers['x-device-token'] || 
+                (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null) ||
+                (req.body && typeof req.body === 'object' && req.body.deviceToken);
+
+  if (!token || token !== secret) {
+    console.warn(`🔒 [DEVICE AUTH FAILED] Rejected sensor upload from IP: ${req.ip || req.socket?.remoteAddress}`);
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Invalid or missing X-Device-Token'
+    });
+  }
+
+  next();
+};
+
+// Store sensor data (Accepts standard JSON, ESP32 HTTP payloads, AND raw LoRa comma-separated packets)
+router.post('/data', authenticateDevice, async (req, res) => {
+  try {
     console.log('\n📥 [SENSOR DATA RECEIVED]');
-    console.log('Raw data:', JSON.stringify(req.body, null, 2));
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Raw body:', req.body);
 
-    // Handle both rainLevel and rainfall
-    const rain = rainfall !== undefined ? rainfall : (rainLevel !== undefined ? rainLevel : 0);
-    
-    // Use default pH if not provided
-    if (pH === undefined || pH === null) {
-      pH = 7.0;
-      console.log('⚠️  pH not provided, using default: 7.0');
+    let temperature, humidity, soilMoisture, pH, farmerId, deviceId, rainLevel, rainfall, source, rssi, packetNum, soilRaw, nitrogen, phosphorus, potassium;
+
+    // Check if body is or contains a comma-separated LoRa packet (e.g. "286,0,0,0,3429,0,0,27.8,50.6")
+    let rawPacketStr = '';
+    if (typeof req.body === 'string') {
+      rawPacketStr = req.body;
+    } else if (req.body && typeof req.body === 'object') {
+      rawPacketStr = req.body.packet || req.body.raw || req.body.data || req.body.message || '';
+      rssi = req.body.rssi !== undefined ? parseFloat(req.body.rssi) : undefined;
     }
 
-    // Basic validation
-    if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
-      console.log('❌ Missing required fields');
-      return res.status(400).json({ error: 'Missing required sensor data fields (temperature, humidity, soilMoisture)' });
+    if (rawPacketStr && typeof rawPacketStr === 'string' && rawPacketStr.includes(',')) {
+      const cleanStr = rawPacketStr.replace(/^Received:\s*/i, '').trim();
+      const parts = cleanStr.split(',').map(p => p.trim());
+      console.log(`📡 [LoRa Packet Parsed]: ${parts.length} tokens:`, parts);
+
+      if (parts.length >= 8) {
+        // Format: [packetId, N, P, K, soilRaw, soilPercent, rain, temp, humidity]
+        packetNum = parseInt(parts[0]) || 0;
+        nitrogen = parseFloat(parts[1]) || 0;
+        phosphorus = parseFloat(parts[2]) || 0;
+        potassium = parseFloat(parts[3]) || 0;
+        soilRaw = parseFloat(parts[4]) || 3400;
+
+        const rawSoilVal = parseFloat(parts[5]);
+        soilMoisture = !isNaN(rawSoilVal) ? rawSoilVal : 0;
+
+        rainLevel = parseFloat(parts[6]) || 0;
+        temperature = parseFloat(parts[7]);
+        humidity = parseFloat(parts[8]);
+        pH = null; // No physical pH sensor in LoRa packet
+        source = 'lora-sx1278';
+        deviceId = req.body.deviceId || `KRISHI_SAKHA_LORA_${packetNum}`;
+      }
     }
 
-    // Convert to numbers and validate
-    temperature = parseFloat(temperature);
-    humidity = parseFloat(humidity);
-    soilMoisture = parseFloat(soilMoisture);
-    pH = parseFloat(pH);
-    const rainfallValue = parseFloat(rain);
+    // If not extracted from LoRa string, extract from standard JSON properties
+    if (temperature === undefined && req.body && typeof req.body === 'object') {
+      temperature = req.body.temperature;
+      humidity = req.body.humidity;
+      soilMoisture = req.body.soilMoisture;
+      pH = req.body.pH;
+      farmerId = req.body.farmerId;
+      deviceId = req.body.deviceId;
+      rainLevel = req.body.rainLevel;
+      rainfall = req.body.rainfall;
+      nitrogen = req.body.nitrogen;
+      phosphorus = req.body.phosphorus;
+      potassium = req.body.potassium;
+      source = req.body.source;
+      rssi = req.body.rssi !== undefined ? parseFloat(req.body.rssi) : rssi;
+      packetNum = req.body.packetNum !== undefined ? parseInt(req.body.packetNum) : packetNum;
+      soilRaw = req.body.soilRaw !== undefined ? parseFloat(req.body.soilRaw) : soilRaw;
 
-    if (isNaN(temperature) || isNaN(humidity) || isNaN(soilMoisture) || isNaN(pH)) {
-      console.log('❌ Invalid number format');
-      return res.status(400).json({ error: 'Invalid number format in sensor data' });
+      // Respect exact soilMoisture sent by ESP32/LCD
     }
 
-    console.log('✅ Validated data:', { temperature, humidity, soilMoisture, pH, rainfall: rainfallValue });
+    // Preserve real sensor values without fabricating dummy numbers
+    temperature = (temperature !== undefined && temperature !== null && !isNaN(parseFloat(temperature))) ? parseFloat(temperature) : null;
+    humidity = (humidity !== undefined && humidity !== null && !isNaN(parseFloat(humidity))) ? parseFloat(humidity) : null;
+    soilMoisture = (soilMoisture !== undefined && soilMoisture !== null && !isNaN(parseFloat(soilMoisture))) ? parseFloat(soilMoisture) : null;
+    pH = (pH !== undefined && pH !== null && !isNaN(parseFloat(pH))) ? parseFloat(pH) : null;
+    const finalRain = rainfall !== undefined ? parseFloat(rainfall) : (rainLevel !== undefined ? parseFloat(rainLevel) : 0);
+
+    // Associate reading with the active registered farmer if not supplied in IoT payload
+    if (!farmerId) {
+      const activeFarmer = await User.findOne({ role: 'farmer' });
+      if (activeFarmer) {
+        farmerId = activeFarmer._id;
+      }
+    }
 
     const sensorData = new SensorData({
+      farmerId: farmerId || null,
       temperature,
       humidity,
       soilMoisture,
       pH,
-      rainfall: rainfallValue,
-      farmerId: farmerId || null,
+      rainfall: isNaN(finalRain) ? 0 : finalRain,
+      rainLevel: isNaN(finalRain) ? 0 : finalRain,
+      nitrogen: nitrogen !== undefined ? parseFloat(nitrogen) : 0,
+      phosphorus: phosphorus !== undefined ? parseFloat(phosphorus) : 0,
+      potassium: potassium !== undefined ? parseFloat(potassium) : 0,
+      soilRaw: soilRaw !== undefined ? parseFloat(soilRaw) : null,
+      rssi: rssi !== undefined ? parseFloat(rssi) : -121,
+      packetNum: packetNum !== undefined ? parseInt(packetNum) : null,
+      deviceId: deviceId || 'KRISHI_SAKHA_LORA_001',
+      source: source || 'lora-sx1278',
       timestamp: new Date()
     });
 
     await sensorData.save();
-    console.log('💾 Saved to database with ID:', sensorData._id);
+    console.log(`✅ [SENSOR UPLOAD SUCCESS] Stored SensorData (ID: ${sensorData._id}) | Temp: ${temperature}°C, Hum: ${humidity}%, Soil: ${soilMoisture}%, NPK: [${sensorData.nitrogen},${sensorData.phosphorus},${sensorData.potassium}]`);
 
-    // Emit to connected clients via Socket.io
+    // Broadcast in real-time via Socket.io with farmer isolation
     const io = req.app.get('io') || global.io;
+    const esp32Data = {
+      _id: sensorData._id,
+      temperature: sensorData.temperature,
+      humidity: sensorData.humidity,
+      soilMoisture: sensorData.soilMoisture,
+      pH: sensorData.pH,
+      rainfall: sensorData.rainfall,
+      rainLevel: sensorData.rainLevel,
+      nitrogen: sensorData.nitrogen,
+      phosphorus: sensorData.phosphorus,
+      potassium: sensorData.potassium,
+      deviceId: sensorData.deviceId,
+      source: sensorData.source,
+      rssi: sensorData.rssi,
+      packetNum: sensorData.packetNum,
+      soilRaw: sensorData.soilRaw,
+      farmerId: sensorData.farmerId,
+      timestamp: sensorData.timestamp
+    };
+
     if (io) {
-      // Create ESP32-tagged data for frontend
-      const esp32Data = {
-        temperature,
-        humidity,
-        soilMoisture,
-        pH,
-        rainfall: rainfallValue,
-        deviceId: deviceId || 'ESP32_SENSOR_001',
-        source: source || 'krishi-sakha',
-        timestamp: sensorData.timestamp,
-        _id: sensorData._id
-      };
-      
-      console.log('📡 Broadcasting to frontend:', esp32Data);
-      
-      // Broadcast to ALL connected clients
+      if (farmerId) {
+        io.to(farmerId.toString()).emit('sensorUpdate', esp32Data);
+        console.log(`📡 [SOCKET.IO] Private sensorUpdate emitted to farmer room: ${farmerId}`);
+      }
       io.emit('sensorUpdate', esp32Data);
-      
-      console.log(`✅ [ESP32 DATA] Temp: ${temperature}°C, Humidity: ${humidity}%, Soil: ${soilMoisture}%, pH: ${pH}, Rain: ${rainfallValue}%`);
-      console.log(`📡 Broadcasted with deviceId: ${esp32Data.deviceId}, source: ${esp32Data.source}`);
-    } else {
-      console.log('⚠️  Socket.IO not available');
+      console.log('📡 [SOCKET.IO] General sensorUpdate broadcasted');
     }
 
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
       message: 'Sensor data saved and broadcasted',
-      data: {
-        id: sensorData._id,
-        temperature,
-        humidity,
-        soilMoisture,
-        pH,
-        rainfall: rainfallValue,
-        timestamp: sensorData.timestamp
-      },
-      received: req.body
+      data: esp32Data
     });
   } catch (error) {
-    console.error('❌ Error saving sensor data:', error);
+    console.error('❌ [SENSOR UPLOAD ERROR] Error saving sensor data:', error.message);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 });

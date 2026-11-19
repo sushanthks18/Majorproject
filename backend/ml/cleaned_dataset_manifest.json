@@ -1,0 +1,183 @@
+{
+  "manifest_version": "1.0",
+  "total_source_images_audited": 10877,
+  "total_valid_images": 10877,
+  "total_corrupted_images": 0,
+  "total_distinct_sha256_hashes": 10636,
+  "total_effective_training_usable_images": 10635,
+  "total_excluded_duplicate_images": 240,
+  "total_excluded_conflicting_images": 2,
+  "class_summary": {
+    "Tomato___Early_Blight": {
+      "canonical_class": "Tomato___Early_Blight",
+      "crop": "Tomato",
+      "raw_images_on_disk": 1000,
+      "effective_unique_usable_for_training": 1000,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Tomato___Late_Blight": {
+      "canonical_class": "Tomato___Late_Blight",
+      "crop": "Tomato",
+      "raw_images_on_disk": 1909,
+      "effective_unique_usable_for_training": 1901,
+      "exact_duplicates_excluded": 8,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Tomato___Healthy": {
+      "canonical_class": "Tomato___Healthy",
+      "crop": "Tomato",
+      "raw_images_on_disk": 1591,
+      "effective_unique_usable_for_training": 1585,
+      "exact_duplicates_excluded": 6,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Potato___Early_Blight": {
+      "canonical_class": "Potato___Early_Blight",
+      "crop": "Potato",
+      "raw_images_on_disk": 1000,
+      "effective_unique_usable_for_training": 1000,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Potato___Late_Blight": {
+      "canonical_class": "Potato___Late_Blight",
+      "crop": "Potato",
+      "raw_images_on_disk": 1000,
+      "effective_unique_usable_for_training": 1000,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Potato___Healthy": {
+      "canonical_class": "Potato___Healthy",
+      "crop": "Potato",
+      "raw_images_on_disk": 152,
+      "effective_unique_usable_for_training": 152,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Rice___Blast": {
+      "canonical_class": "Rice___Blast",
+      "crop": "Rice",
+      "raw_images_on_disk": 305,
+      "effective_unique_usable_for_training": 270,
+      "exact_duplicates_excluded": 34,
+      "cross_class_conflicts_excluded": 1,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Rice___Bacterial_Blight": {
+      "canonical_class": "Rice___Bacterial_Blight",
+      "crop": "Rice",
+      "raw_images_on_disk": 180,
+      "effective_unique_usable_for_training": 179,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 1,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Rice___Brown_Spot": {
+      "canonical_class": "Rice___Brown_Spot",
+      "crop": "Rice",
+      "raw_images_on_disk": 267,
+      "effective_unique_usable_for_training": 260,
+      "exact_duplicates_excluded": 7,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Rice___Healthy": {
+      "canonical_class": "Rice___Healthy",
+      "crop": "Rice",
+      "raw_images_on_disk": 157,
+      "effective_unique_usable_for_training": 154,
+      "exact_duplicates_excluded": 3,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Wheat___Leaf_Rust": {
+      "canonical_class": "Wheat___Leaf_Rust",
+      "crop": "Wheat",
+      "raw_images_on_disk": 128,
+      "effective_unique_usable_for_training": 128,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Wheat___Powdery_Mildew": {
+      "canonical_class": "Wheat___Powdery_Mildew",
+      "crop": "Wheat",
+      "raw_images_on_disk": 161,
+      "effective_unique_usable_for_training": 161,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Wheat___Healthy": {
+      "canonical_class": "Wheat___Healthy",
+      "crop": "Wheat",
+      "raw_images_on_disk": 122,
+      "effective_unique_usable_for_training": 122,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Corn___Common_Rust": {
+      "canonical_class": "Corn___Common_Rust",
+      "crop": "Corn",
+      "raw_images_on_disk": 1192,
+      "effective_unique_usable_for_training": 1192,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Corn___Healthy": {
+      "canonical_class": "Corn___Healthy",
+      "crop": "Corn",
+      "raw_images_on_disk": 1162,
+      "effective_unique_usable_for_training": 1162,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Cotton___Bacterial_Blight": {
+      "canonical_class": "Cotton___Bacterial_Blight",
+      "crop": "Cotton",
+      "raw_images_on_disk": 218,
+      "effective_unique_usable_for_training": 195,
+      "exact_duplicates_excluded": 23,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Cotton___Healthy": {
+      "canonical_class": "Cotton___Healthy",
+      "crop": "Cotton",
+      "raw_images_on_disk": 333,
+      "effective_unique_usable_for_training": 174,
+      "exact_duplicates_excluded": 159,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "ADEQUATE_VOLUME"
+    },
+    "Ragi___Blast": {
+      "canonical_class": "Ragi___Blast",
+      "crop": "Ragi",
+      "raw_images_on_disk": 0,
+      "effective_unique_usable_for_training": 0,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "NOT_SUPPORTED_YET"
+    },
+    "Ragi___Healthy": {
+      "canonical_class": "Ragi___Healthy",
+      "crop": "Ragi",
+      "raw_images_on_disk": 0,
+      "effective_unique_usable_for_training": 0,
+      "exact_duplicates_excluded": 0,
+      "cross_class_conflicts_excluded": 0,
+      "support_status": "NOT_SUPPORTED_YET"
+    }
+  }
+}

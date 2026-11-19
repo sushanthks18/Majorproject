@@ -3,7 +3,7 @@ import Navbar from '../../components/Navbar';
 import Card from '../../components/Card';
 import Loading from '../../components/Loading';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Thermometer, Droplets, Sprout, FlaskConical, Activity, CloudRain } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, Activity, CloudRain } from 'lucide-react';
 import api from '../../utils/api';
 import { getSocket } from '../../utils/socket';
 import toast from 'react-hot-toast';
@@ -113,7 +113,9 @@ const Analytics = () => {
       temperature: reading.temperature,
       humidity: reading.humidity,
       soilMoisture: reading.soilMoisture,
-      pH: reading.pH
+      nitrogen: reading.nitrogen !== undefined ? reading.nitrogen : 0,
+      phosphorus: reading.phosphorus !== undefined ? reading.phosphorus : 0,
+      potassium: reading.potassium !== undefined ? reading.potassium : 0
     }));
   };
 
@@ -246,23 +248,20 @@ const Analytics = () => {
                 </div>
               </Card>
 
-              {/* pH Level */}
-              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+              {/* NPK Soil Nutrients */}
+              <Card className="bg-gradient-to-br from-amber-50 to-emerald-50 border-l-4 border-amber-500 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between mb-2">
-                  <FlaskConical className="w-10 h-10 text-purple-600" />
+                  <Sprout className="w-10 h-10 text-amber-600" />
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-purple-600">
-                      {latestReading.pH?.toFixed(1)}
+                    <div className="text-xl font-bold text-gray-800 font-mono">
+                      N:{latestReading.nitrogen ?? 0} P:{latestReading.phosphorus ?? 0} K:{latestReading.potassium ?? 0}
                     </div>
-                    <div className="text-sm text-gray-600">pH</div>
+                    <div className="text-sm text-gray-600">mg/kg</div>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-gray-700">pH Level</div>
-                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-400 to-purple-600 transition-all duration-500"
-                    style={{ width: `${(latestReading.pH / 14) * 100}%` }}
-                  ></div>
+                <div className="text-sm font-semibold text-gray-700">NPK Soil Nutrients</div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Real-time RS485 NPK Sensor
                 </div>
               </Card>
 
@@ -402,15 +401,15 @@ const Analytics = () => {
                   </div>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-purple-50 to-pink-50">
+                <Card className="bg-gradient-to-br from-amber-50 to-yellow-50">
                   <div className="flex items-center gap-3 mb-3">
-                    <FlaskConical className="w-8 h-8 text-purple-600" />
-                    <h3 className="font-bold text-gray-800">pH Level</h3>
+                    <Sprout className="w-8 h-8 text-amber-600" />
+                    <h3 className="font-bold text-gray-800">NPK Nutrients</h3>
                   </div>
                   <div className="space-y-1 text-sm">
-                    <p className="text-gray-600">Avg: <span className="font-bold">{stats.avgPH?.toFixed(2)}</span></p>
-                    <p className="text-gray-600">Max: <span className="font-bold">{stats.maxPH?.toFixed(2)}</span></p>
-                    <p className="text-gray-600">Min: <span className="font-bold">{stats.minPH?.toFixed(2)}</span></p>
+                    <p className="text-gray-600">N: <span className="font-bold">{sensorData[sensorData.length - 1]?.nitrogen ?? '--'} mg/kg</span></p>
+                    <p className="text-gray-600">P: <span className="font-bold">{sensorData[sensorData.length - 1]?.phosphorus ?? '--'} mg/kg</span></p>
+                    <p className="text-gray-600">K: <span className="font-bold">{sensorData[sensorData.length - 1]?.potassium ?? '--'} mg/kg</span></p>
                   </div>
                 </Card>
               </div>
@@ -457,14 +456,15 @@ const Analytics = () => {
                     </div>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50">
+                  <Card className="bg-gradient-to-br from-amber-50 to-yellow-50">
                     <div className="flex items-center gap-3 mb-3">
-                      <FlaskConical className="w-8 h-8 text-purple-600" />
-                      <h3 className="font-bold text-gray-800">pH Level</h3>
+                      <Sprout className="w-8 h-8 text-amber-600" />
+                      <h3 className="font-bold text-gray-800">NPK Status</h3>
                     </div>
                     <div className="space-y-1 text-sm">
-                      <p className="text-gray-600">Current: <span className="font-bold text-2xl text-purple-600">{realtimeData[realtimeData.length - 1].pH?.toFixed(2)}</span></p>
-                      <p className="text-gray-600">Avg: <span className="font-bold">{(realtimeData.reduce((sum, r) => sum + r.pH, 0) / realtimeData.length).toFixed(2)}</span></p>
+                      <p className="text-gray-600">N: <span className="font-bold text-amber-600">{realtimeData[realtimeData.length - 1]?.nitrogen ?? 0} mg/kg</span></p>
+                      <p className="text-gray-600">P: <span className="font-bold text-indigo-600">{realtimeData[realtimeData.length - 1]?.phosphorus ?? 0} mg/kg</span></p>
+                      <p className="text-gray-600">K: <span className="font-bold text-teal-600">{realtimeData[realtimeData.length - 1]?.potassium ?? 0} mg/kg</span></p>
                     </div>
                   </Card>
                 </div>
@@ -548,18 +548,20 @@ const Analytics = () => {
             </Card>
             )}
 
-            {/* pH Levels Chart */}
+            {/* NPK Soil Nutrients Chart */}
             {(!isRealTimeMode || realtimeData.length > 0) && (
             <Card className="mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">pH Level Variations</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">🧪 NPK Soil Nutrients (mg/kg)</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={formatChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="time" />
-                  <YAxis domain={[0, 14]} />
+                  <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="pH" fill="#a855f7" name="pH Level" />
+                  <Bar dataKey="nitrogen" fill="#f59e0b" name="Nitrogen (N)" />
+                  <Bar dataKey="phosphorus" fill="#6366f1" name="Phosphorus (P)" />
+                  <Bar dataKey="potassium" fill="#14b8a6" name="Potassium (K)" />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -599,9 +601,16 @@ const Analytics = () => {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="pH" 
-                    stroke="#a855f7" 
-                    name="pH Level (x10)"
+                    dataKey="nitrogen" 
+                    stroke="#f59e0b" 
+                    name="Nitrogen (mg/kg)"
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="potassium" 
+                    stroke="#14b8a6" 
+                    name="Potassium (mg/kg)"
                     dot={false}
                   />
                 </LineChart>

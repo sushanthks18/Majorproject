@@ -7,19 +7,23 @@ const sensorDataSchema = new mongoose.Schema({
   },
   temperature: {
     type: Number,
-    required: true
+    default: null,
+    required: false
   },
   humidity: {
     type: Number,
-    required: true
+    default: null,
+    required: false
   },
   soilMoisture: {
     type: Number,
-    required: true
+    default: null,
+    required: false
   },
   pH: {
     type: Number,
-    required: true
+    default: null,
+    required: false
   },
   rainfall: {
     type: Number,
@@ -28,6 +32,38 @@ const sensorDataSchema = new mongoose.Schema({
   rainLevel: {
     type: Number,
     default: 0
+  },
+  nitrogen: {
+    type: Number,
+    default: 0
+  },
+  phosphorus: {
+    type: Number,
+    default: 0
+  },
+  potassium: {
+    type: Number,
+    default: 0
+  },
+  soilRaw: {
+    type: Number,
+    default: null
+  },
+  rssi: {
+    type: Number,
+    default: null
+  },
+  packetNum: {
+    type: Number,
+    default: null
+  },
+  deviceId: {
+    type: String,
+    default: 'ESP32_SENSOR_001'
+  },
+  source: {
+    type: String,
+    default: 'krishi-sakha'
   },
   timestamp: {
     type: Date,

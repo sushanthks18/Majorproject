@@ -1,0 +1,299 @@
+{
+  "timestamp": "2026-10-31T04:12:47Z",
+  "summary": {
+    "total_benchmark_images_audited": 700,
+    "total_benchmark_images_leaked": 700,
+    "benchmark_leakage_pct": 100.0,
+    "val_leakage_count": 0,
+    "test_leakage_count": 0,
+    "verdict": "DATA_LEAKAGE_CONFIRMED_IN_BENCHMARK_PART_1"
+  },
+  "benchmark_700_leakage_by_crop": {
+    "Soybean": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "0007ca44-b81d-475c-b8b5-c226a041f020___RS_HL 6331.JPG",
+          "matched_train_file": "0007ca44-b81d-475c-b8b5-c226a041f020___RS_HL 6331.JPG",
+          "sha256": "1d31cbb7b459852ab966e17b80c241e1fc533ae7d23d479f0a36ffd525a4d3a0",
+          "dhash": "0x603190d4566371f",
+          "phash": "0xffe1a005957e942a"
+        },
+        {
+          "benchmark_file": "0010d6a1-64f1-4997-99d8-6d86fa629014___RS_HL 6967.JPG",
+          "matched_train_file": "0010d6a1-64f1-4997-99d8-6d86fa629014___RS_HL 6967.JPG",
+          "sha256": "024bc95bf222b0b66470e2bb529b7ff29fb49ddf8f434c2d4004259c464de7aa",
+          "dhash": "0x7e3f1f5be3652b0f",
+          "phash": "0xaf97d44ac16d8472"
+        }
+      ]
+    },
+    "Strawberry": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "0024203d-6e4c-490f-b9a8-e5926df0b76e___RS_L.Scorch 0795.JPG",
+          "matched_train_file": "0024203d-6e4c-490f-b9a8-e5926df0b76e___RS_L.Scorch 0795.JPG",
+          "sha256": "ced7b1a3b8dea109af205706c92ad984e461780c4400f8eb3856f0a646435bd7",
+          "dhash": "0xc9263f1e9f0c173a",
+          "phash": "0xb4c6c9c211ee92eb"
+        },
+        {
+          "benchmark_file": "0112c6b2-72cd-402b-89cd-ca052983403e___RS_L.Scorch 1161.JPG",
+          "matched_train_file": "0112c6b2-72cd-402b-89cd-ca052983403e___RS_L.Scorch 1161.JPG",
+          "sha256": "e24ec4d33dd3e8ffe561575524c37c21894540726c124b051f7105492e5f54d1",
+          "dhash": "0xff7fc7c7df4f7fff",
+          "phash": "0xa36cdebfc0206bc8"
+        }
+      ]
+    },
+    "Apple": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "00075aa8-d81a-4184-8541-b692b78d398a___FREC_Scab 3335.JPG",
+          "matched_train_file": "00075aa8-d81a-4184-8541-b692b78d398a___FREC_Scab 3335.JPG",
+          "sha256": "cc34c72a9d19c74ab2fe86204143856e370d0c981a90382535811b262bb15dda",
+          "dhash": "0x9f0f074d79c16133",
+          "phash": "0xeeb185d21aca690f"
+        },
+        {
+          "benchmark_file": "01a66316-0e98-4d3b-a56f-d78752cd043f___FREC_Scab 3003.JPG",
+          "matched_train_file": "01a66316-0e98-4d3b-a56f-d78752cd043f___FREC_Scab 3003.JPG",
+          "sha256": "653e1d01d1df46983ecfc49b171414ae9ab6030f0ba106a92fd4aa64dc41b61f",
+          "dhash": "0x307171b191d3c3c",
+          "phash": "0xb9e184d31a9c1db5"
+        }
+      ]
+    },
+    "Grape": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "00090b0f-c140-4e77-8d20-d39f67b75fcc___FAM_B.Rot 0376.JPG",
+          "matched_train_file": "00090b0f-c140-4e77-8d20-d39f67b75fcc___FAM_B.Rot 0376.JPG",
+          "sha256": "1137e31cadf613ae388e40c7d71450df5af579be3ce3acf41605df5ff5283717",
+          "dhash": "0xef8f076777773fbf",
+          "phash": "0xafe2d00d9a1bcc39"
+        },
+        {
+          "benchmark_file": "003d09ef-e16c-4e8a-badf-847d46cb3dc0___FAM_B.Rot 3184.JPG",
+          "matched_train_file": "003d09ef-e16c-4e8a-badf-847d46cb3dc0___FAM_B.Rot 3184.JPG",
+          "sha256": "e17098d2dbf7baa98db5af1f214522616b836a1a2bf9377bd914538304791826",
+          "dhash": "0x7071b3939113333",
+          "phash": "0xfb61c44f941af318"
+        }
+      ]
+    },
+    "Peach": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "00130039-8425-42e9-9dd9-15aead7271ff___Rut._Bact.S 3421.JPG",
+          "matched_train_file": "00130039-8425-42e9-9dd9-15aead7271ff___Rut._Bact.S 3421.JPG",
+          "sha256": "341a70994fefab41b18db1f938ed04723990877bdb395a0766b59af5fbdad506",
+          "dhash": "0xe3e3e7c78f0a165c",
+          "phash": "0xe6c899d973c49632"
+        },
+        {
+          "benchmark_file": "002eddd0-b6b3-474c-be08-423e53e24f82___Rutg._Bact.S 1955.JPG",
+          "matched_train_file": "002eddd0-b6b3-474c-be08-423e53e24f82___Rutg._Bact.S 1955.JPG",
+          "sha256": "ecd792bad2b25e4a12806f279a0f0c90f4ec720f0eb0a0b6680de2bb8d82788b",
+          "dhash": "0x7f6f67f7df9fcfee",
+          "phash": "0xa70e4731d871d966"
+        }
+      ]
+    },
+    "Pepper_Bell": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "00100ffa-095e-4881-aebf-61fe5af7226e___JR_HL 7886.JPG",
+          "matched_train_file": "00100ffa-095e-4881-aebf-61fe5af7226e___JR_HL 7886.JPG",
+          "sha256": "7338e5c3be02ddfb4fc37336c4d111ecb23dc33860bee59e77defaf563b621d7",
+          "dhash": "0x8c0e337371747014",
+          "phash": "0xffa2d412c20fc56c"
+        },
+        {
+          "benchmark_file": "00208a93-7687-4e8c-b79e-3138687e0f38___JR_HL 7955.JPG",
+          "matched_train_file": "00208a93-7687-4e8c-b79e-3138687e0f38___JR_HL 7955.JPG",
+          "sha256": "8bd46db0bd8af57272d0d5721df025cbc4856c3b5d11164bc2eb093909183340",
+          "dhash": "0xecc687034371610d",
+          "phash": "0xeef4961ae90d905a"
+        }
+      ]
+    },
+    "Orange": {
+      "total_tested": 100,
+      "exact_filepath_matches": 100,
+      "exact_sha256_matches": 100,
+      "phash_exact_matches": 100,
+      "phash_near_matches_dist_le_5": 0,
+      "leakage_percentage": 100.0,
+      "status": "\ud83d\udd34 DATA LEAKAGE DETECTED",
+      "samples": [
+        {
+          "benchmark_file": "00045d08-898c-40df-ada6-e7579637a1f9___UF.Citrus_HLB_Lab 1690.JPG",
+          "matched_train_file": "00045d08-898c-40df-ada6-e7579637a1f9___UF.Citrus_HLB_Lab 1690.JPG",
+          "sha256": "9ad662d062f6ac5b0f58e6ba58a11dd0a0ea44100e093447af4b89f29fdb4fe4",
+          "dhash": "0x70e4ca80c0c06133",
+          "phash": "0xc1b63bc2f13b210f"
+        },
+        {
+          "benchmark_file": "000945ae-3cf5-48c2-86a2-a3f1e777f2c7___CREC_HLB 7640.JPG",
+          "matched_train_file": "000945ae-3cf5-48c2-86a2-a3f1e777f2c7___CREC_HLB 7640.JPG",
+          "sha256": "c005140d9cd523d1ef3508d7a350b0cabf7d9955ea1fa7dfbe26b992fe5dd34a",
+          "dhash": "0xf07276467331f1d",
+          "phash": "0xae46f02f96b44b62"
+        }
+      ]
+    }
+  },
+  "split_integrity": {
+    "validation_split_1594": {
+      "total": 1594,
+      "exact_filepath_matches": 0,
+      "exact_sha256_matches": 0,
+      "status": "CLEAN"
+    },
+    "held_out_test_split_1597": {
+      "total": 1597,
+      "exact_filepath_matches": 0,
+      "exact_sha256_matches": 0,
+      "status": "CLEAN"
+    }
+  },
+  "crop_verifier_head": {
+    "classes": [
+      "Tomato",
+      "Potato",
+      "Rice",
+      "Wheat",
+      "Corn",
+      "Cotton",
+      "Unsupported"
+    ],
+    "class_to_idx": {
+      "Tomato": 0,
+      "Potato": 1,
+      "Rice": 2,
+      "Wheat": 3,
+      "Corn": 4,
+      "Cotton": 5,
+      "Unsupported": 6
+    },
+    "supported_crops": [
+      "Tomato",
+      "Potato",
+      "Rice",
+      "Wheat",
+      "Corn",
+      "Cotton"
+    ],
+    "unsupported_class_index": 6,
+    "training_unsupported_background_folders": [
+      "Apple___Apple_scab",
+      "Apple___Black_rot",
+      "Apple___healthy",
+      "Grape___Black_rot",
+      "Grape___Esca_(Black_Measles)",
+      "Grape___healthy",
+      "Orange___Haunglongbing_(Citrus_greening)",
+      "Peach___Bacterial_spot",
+      "Peach___healthy",
+      "Pepper,_bell___Bacterial_spot",
+      "Pepper,_bell___healthy",
+      "Strawberry___Leaf_scorch",
+      "Strawberry___healthy",
+      "Soybean___healthy"
+    ],
+    "training_unsupported_image_count": 1400
+  },
+  "true_held_out_evaluation": {
+    "Soybean": {
+      "unseen_tested": 200,
+      "rejected_safe": 192,
+      "false_accepted": 8,
+      "true_rejection_rate_pct": 96.0,
+      "true_false_acceptance_rate_pct": 4.0
+    },
+    "Strawberry": {
+      "unseen_tested": 200,
+      "rejected_safe": 195,
+      "false_accepted": 5,
+      "true_rejection_rate_pct": 97.5,
+      "true_false_acceptance_rate_pct": 2.5
+    },
+    "Apple": {
+      "unseen_tested": 200,
+      "rejected_safe": 192,
+      "false_accepted": 8,
+      "true_rejection_rate_pct": 96.0,
+      "true_false_acceptance_rate_pct": 4.0
+    },
+    "Grape": {
+      "unseen_tested": 200,
+      "rejected_safe": 197,
+      "false_accepted": 3,
+      "true_rejection_rate_pct": 98.5,
+      "true_false_acceptance_rate_pct": 1.5
+    },
+    "Peach": {
+      "unseen_tested": 200,
+      "rejected_safe": 197,
+      "false_accepted": 3,
+      "true_rejection_rate_pct": 98.5,
+      "true_false_acceptance_rate_pct": 1.5
+    },
+    "Pepper_Bell": {
+      "unseen_tested": 200,
+      "rejected_safe": 200,
+      "false_accepted": 0,
+      "true_rejection_rate_pct": 100.0,
+      "true_false_acceptance_rate_pct": 0.0
+    },
+    "Orange": {
+      "unseen_tested": 200,
+      "rejected_safe": 198,
+      "false_accepted": 2,
+      "true_rejection_rate_pct": 99.0,
+      "true_false_acceptance_rate_pct": 1.0
+    }
+  }
+}

@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import { startNotificationScheduler } from './utils/notificationService.js';
 import { syncPriorityData } from './sync_gov_data.js';
 import { autoAggregateHourly } from './services/sensorAggregation.js';
+import { Bonjour } from 'bonjour-service';
+import os from 'os';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -31,16 +33,16 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: '*', // Allow all origins for IoT devices
+  origin: '*', // Allow all origins for IoT devices and remote dashboards
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Token', 'x-device-token'],
   credentials: true
 }));
 app.use(express.json());
@@ -50,19 +52,21 @@ app.use(express.urlencoded({ extended: true }));
 global.io = io;
 app.set('io', io);
 
-// MongoDB connection - For demo purposes
+// MongoDB connection (supports local MongoDB and MongoDB Atlas Cloud)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-agriculture';
+const isAtlas = MONGODB_URI.includes('mongodb+srv://');
+console.log(`📡 Connecting to MongoDB (${isAtlas ? 'MongoDB Atlas Cloud' : 'Local MongoDB'})...`);
 
 mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 3000,
-  socketTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 15000,
 })
   .then(() => {
-    console.log('✅ Connected to MongoDB');
+    console.log(`✅ Connected to MongoDB (${isAtlas ? 'Atlas Cloud' : 'Local'})`);
   })
   .catch(err => {
-    console.warn('⚠️  MongoDB not available - App will work with limited features');
-    console.log('💡 Signup/Login will work, but data won\'t persist after restart');
+    console.warn('⚠️  MongoDB not available:', err.message);
+    console.log('💡 Demo mode active: data won\'t persist without MongoDB');
   });
 
 // Routes
@@ -187,6 +191,86 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   
+  // Helper to discover primary LAN IP
+  const getPrimaryLanIp = () => {
+    const nets = os.networkInterfaces();
+    if (nets['en0']) {
+      for (const net of nets['en0']) {
+        if (net.family === 'IPv4' && !net.internal) return net.address;
+      }
+    }
+    for (const [name, addrs] of Object.entries(nets)) {
+      if (name.startsWith('bridge') || name.startsWith('utun') || name.startsWith('lo')) continue;
+      for (const net of addrs) {
+        if (net.family === 'IPv4' && !net.internal) return net.address;
+      }
+    }
+    return '127.0.0.1';
+  };
+
+  // mDNS Service Advertisement for ESP32 Receiver Auto-Discovery
+  let bonjourInstance = null;
+  let lastAdvertisedIp = '127.0.0.1';
+  try {
+    lastAdvertisedIp = getPrimaryLanIp();
+    bonjourInstance = new Bonjour({}, (err) => {
+      console.warn('⚠️ [mDNS] Socket event:', err?.message || err);
+    });
+    bonjourInstance.publish({
+      name: 'Krishi Sakha Backend',
+      type: 'http',
+      port: parseInt(PORT, 10),
+      host: 'krishisakha.local',
+      txt: {
+        path: '/api/sensors/data',
+        ip: lastAdvertisedIp,
+        app: 'krishisakha',
+        version: '2.0.0'
+      }
+    });
+    console.log(`📡 [mDNS] Service advertised: _http._tcp on port ${PORT} ("Krishi Sakha Backend" -> krishisakha.local @ ${lastAdvertisedIp})`);
+
+    // Periodically detect if DHCP IP changed and update advertisement
+    setInterval(() => {
+      const freshIp = getPrimaryLanIp();
+      if (freshIp !== lastAdvertisedIp && freshIp !== '127.0.0.1') {
+        console.log(`🔄 [mDNS] LAN IP change detected: ${lastAdvertisedIp} -> ${freshIp}. Updating mDNS advertisement...`);
+        lastAdvertisedIp = freshIp;
+        if (bonjourInstance) {
+          try {
+            bonjourInstance.unpublishAll(() => {
+              bonjourInstance.publish({
+                name: 'Krishi Sakha Backend',
+                type: 'http',
+                port: parseInt(PORT, 10),
+                host: 'krishisakha.local',
+                txt: {
+                  path: '/api/sensors/data',
+                  ip: freshIp,
+                  app: 'krishisakha',
+                  version: '2.0.0'
+                }
+              });
+              console.log(`📡 [mDNS] Re-advertised _http._tcp on port ${PORT} ("Krishi Sakha Backend" -> krishisakha.local @ ${freshIp})`);
+            });
+          } catch (updateErr) {
+            console.warn('⚠️ [mDNS] Failed to update advertisement:', updateErr.message);
+          }
+        }
+      }
+    }, 15000);
+  } catch (err) {
+    console.warn('⚠️ [mDNS] Could not initialize Bonjour service:', err.message);
+  }
+
+  const cleanup = () => {
+    if (bonjourInstance) {
+      try { bonjourInstance.destroy(); } catch (e) {}
+    }
+  };
+  process.on('SIGINT', () => { cleanup(); process.exit(0); });
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+
   // Start notification scheduler after DB connects
   setTimeout(() => {
     if (mongoose.connection.readyState === 1) {

@@ -16,6 +16,7 @@ const CropRecommendation = () => {
   const [selectedField, setSelectedField] = useState(null);
   const [savingPlan, setSavingPlan] = useState(false);
   const [showUnlockConfirmation, setShowUnlockConfirmation] = useState(false);
+  const [soilPH, setSoilPH] = useState(6.5);
 
   useEffect(() => {
     fetchSensorData();
@@ -84,7 +85,7 @@ const CropRecommendation = () => {
         temperature: parseFloat(sensorData.temperature) || 25,
         humidity: parseFloat(sensorData.humidity) || 65,
         soilMoisture: parseFloat(sensorData.soilMoisture) || 50,
-        pH: parseFloat(sensorData.pH) || 6.5,
+        pH: parseFloat(soilPH) || 6.5,
         rainfall: parseFloat(sensorData.rainfall) || 100,
         fieldId: selectedField,
         useAggregated: true
@@ -247,22 +248,44 @@ const CropRecommendation = () => {
 
               {/* Sensor Data Display */}
               {sensorData && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Temperature</p>
-                    <p className="text-xl font-bold text-gray-800">{sensorData.temperature}°C</p>
+                <div className="mb-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg text-center border border-gray-100">
+                      <p className="text-sm text-gray-600">Temperature</p>
+                      <p className="text-xl font-bold text-gray-800">{sensorData.temperature !== null ? `${sensorData.temperature}°C` : '--'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg text-center border border-gray-100">
+                      <p className="text-sm text-gray-600">Humidity</p>
+                      <p className="text-xl font-bold text-gray-800">{sensorData.humidity !== null ? `${sensorData.humidity}%` : '--'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg text-center border border-gray-100">
+                      <p className="text-sm text-gray-600">Soil Moisture</p>
+                      <p className="text-xl font-bold text-gray-800">{sensorData.soilMoisture !== null ? `${sensorData.soilMoisture}%` : '--'}</p>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Humidity</p>
-                    <p className="text-xl font-bold text-gray-800">{sensorData.humidity}%</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">Soil Moisture</p>
-                    <p className="text-xl font-bold text-gray-800">{sensorData.soilMoisture}%</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <p className="text-sm text-gray-600">pH Level</p>
-                    <p className="text-xl font-bold text-gray-800">{sensorData.pH}</p>
+
+                  {/* Soil Science Input: Soil pH for ML model */}
+                  <div className="p-4 bg-purple-50/70 rounded-xl border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-purple-900">
+                        🧪 Soil Test pH (Agronomic ML Parameter)
+                      </p>
+                      <p className="text-xs text-purple-700 mt-0.5">
+                        Input from your Soil Health Card / Lab test. Defaults to regional baseline (6.5).
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="3.5"
+                        max="9.5"
+                        value={soilPH}
+                        onChange={(e) => setSoilPH(parseFloat(e.target.value) || 6.5)}
+                        className="w-20 px-2.5 py-1.5 bg-white border border-purple-300 rounded-lg text-sm font-bold text-purple-900 text-center focus:ring-2 focus:ring-purple-500 outline-none"
+                      />
+                      <span className="text-xs font-bold text-purple-700">pH</span>
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,4 +1,7 @@
 import express from 'express';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import SensorData from '../models/SensorData.js';
 import AggregatedSensorData from '../models/AggregatedSensorData.js';
 import MandiPrice from '../models/MandiPrice.js';
@@ -8,6 +11,9 @@ import { authenticate, authenticateFarmer } from '../middleware/auth.js';
 import fetch from 'node-fetch';
 import { predictCrop } from '../ml/ml_predictor.js';
 import { getLatestAggregation, compareAggregatedWithRealtime, aggregateSensorData, storeAggregatedData } from '../services/sensorAggregation.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 const ML_API_URL = 'http://localhost:5002/predict';
@@ -30,12 +36,15 @@ router.post('/crop', authenticate, async (req, res) => {
     console.log('\n🌾 [Crop Recommendation Request - MARKET-AWARE ML MODEL WITH AGGREGATION]');
     console.log('Data:', { temperature, humidity, soilMoisture, pH, rainfall, fieldId, useAggregated });
 
-    // Validate input
-    if (temperature === undefined || humidity === undefined || soilMoisture === undefined || pH === undefined) {
+    // Validate input (temperature, humidity, soilMoisture from IoT sensors; pH as agronomic parameter)
+    if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
       return res.status(400).json({ 
-        error: 'Missing required fields: temperature, humidity, soilMoisture, pH' 
+        error: 'Missing required fields: temperature, humidity, soilMoisture' 
       });
     }
+
+    // Use provided soil test pH or agronomic baseline (6.5)
+    const effectivePH = (pH !== undefined && pH !== null && !isNaN(parseFloat(pH))) ? parseFloat(pH) : 6.5;
 
     // Check if field has a locked crop
     let field = null;
@@ -58,7 +67,7 @@ router.post('/crop', authenticate, async (req, res) => {
       temperature,
       humidity,
       soilMoisture,
-      pH,
+      pH: effectivePH,
       rainfall
     };
     
@@ -610,10 +619,10 @@ router.post('/disease', authenticate, async (req, res) => {
     console.log('\n🦠 [Disease Risk Prediction Request]');
     console.log('Data:', { crop, temperature, humidity, soilMoisture, pH });
 
-    // Validate input
-    if (!crop || temperature === undefined || humidity === undefined || soilMoisture === undefined || pH === undefined) {
+    // Validate input (crop and environmental sensor readings)
+    if (!crop || temperature === undefined || humidity === undefined || soilMoisture === undefined) {
       return res.status(400).json({ 
-        error: 'Missing required fields: crop, temperature, humidity, soilMoisture, pH' 
+        error: 'Missing required fields: crop, temperature, humidity, soilMoisture' 
       });
     }
 
@@ -656,14 +665,17 @@ router.post('/disease', authenticate, async (req, res) => {
       preventiveMeasures.push('Maintain adequate soil moisture');
     }
 
-    // pH imbalance
-    if (pH < 5.5 || pH > 8.0) {
-      riskLevel += 10;
-      diseases.push(`pH stress (${pH}) - nutrient deficiency`);
-      if (pH < 5.5) {
-        preventiveMeasures.push('Apply lime to increase soil pH');
-      } else {
-        preventiveMeasures.push('Apply sulfur to decrease soil pH');
+    // pH imbalance (only evaluated if soil pH is provided)
+    if (pH !== undefined && pH !== null && !isNaN(parseFloat(pH))) {
+      const parsedPH = parseFloat(pH);
+      if (parsedPH < 5.5 || parsedPH > 8.0) {
+        riskLevel += 10;
+        diseases.push(`pH stress (${parsedPH}) - nutrient deficiency`);
+        if (parsedPH < 5.5) {
+          preventiveMeasures.push('Apply lime to increase soil pH');
+        } else {
+          preventiveMeasures.push('Apply sulfur to decrease soil pH');
+        }
       }
     }
 
@@ -734,116 +746,97 @@ router.post('/disease', authenticate, async (req, res) => {
   }
 });
 
-// CNN Image-Based Crop & Leaf Disease Detection
+// Helper to invoke PyTorch MobileNetV2 Vision Model
+function predictDiseaseMobileNetV2(image, crop) {
+  return new Promise((resolve, reject) => {
+    // Sanity check on image payload size (max 15MB base64 string)
+    if (typeof image === 'string' && image.length > 15 * 1024 * 1024) {
+      return reject(new Error('Image payload exceeds maximum limit of 15MB'));
+    }
+
+    const pythonScript = path.join(__dirname, '..', 'ml', 'mobilenet_v2_disease.py');
+    const pyProcess = spawn('python3', [pythonScript]);
+
+    let outputData = '';
+    let errorData = '';
+    let timeoutTimer = null;
+
+    pyProcess.stdout.on('data', (data) => {
+      outputData += data.toString();
+    });
+
+    pyProcess.stderr.on('data', (data) => {
+      errorData += data.toString();
+    });
+
+    pyProcess.on('close', (code) => {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      if (code !== 0) {
+        return reject(new Error(errorData || `MobileNetV2 process exited with code ${code}`));
+      }
+      try {
+        const result = JSON.parse(outputData);
+        if (result.status === 'error') {
+          return reject(new Error(result.error));
+        }
+        resolve(result);
+      } catch (e) {
+        reject(new Error(`Failed to parse MobileNetV2 JSON output: ${e.message}`));
+      }
+    });
+
+    pyProcess.stdin.on('error', (err) => {
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+      reject(new Error(`Failed to write to MobileNetV2 process stdin: ${err.message}`));
+    });
+
+    pyProcess.stdin.write(JSON.stringify({ image, crop }));
+    pyProcess.stdin.end();
+
+    timeoutTimer = setTimeout(() => {
+      pyProcess.kill();
+      reject(new Error('MobileNetV2 inference timed out (exceeded 15 seconds)'));
+    }, 15000);
+  });
+}
+
+// MobileNetV2 Deep Learning Image-Based Crop & Leaf Disease Detection
 router.post('/disease-image', authenticate, async (req, res) => {
   try {
     const { image, crop } = req.body;
 
-    console.log('\n📸 [High-Precision ResNet-SE CNN Image Disease Scan Request]');
+    console.log('\n📸 [MobileNetV2 Deep Learning Plant Disease Scan Request]');
     console.log('Target crop:', crop || 'Auto-detect');
 
     if (!image) {
       return res.status(400).json({ error: 'Image data is required' });
     }
 
-    // High-Accuracy Deep ResNet-SE Vision CNN Disease Class Definitions & Diagnoses
-    const cnnDiagnoses = [
-      {
-        disease: 'Early Blight (Alternaria solani)',
-        cropType: crop || 'Tomato/Potato',
-        confidence: 98.6,
-        severity: 'Moderate',
-        symptoms: ['Concentric dark target-spot rings on leaves', 'Yellowing leaf margins', 'Stem lesion girdling'],
-        treatments: [
-          'Apply copper-based fungicide spray (e.g. Copper Oxychloride 3g/L)',
-          'Remove infected lower leaves to restrict spore splash',
-          'Avoid overhead watering; transition to drip irrigation'
-        ],
-        organicControl: 'Neem oil spray (5 ml/L) or Trichoderma viride bio-fungicide'
-      },
-      {
-        disease: 'Leaf Rust (Puccinia spp.)',
-        cropType: crop || 'Wheat/Maize',
-        confidence: 99.1,
-        severity: 'High',
-        symptoms: ['Orange-red pustules on leaf surface', 'Premature leaf chlorosis & desiccation', 'Stunted grain fill'],
-        treatments: [
-          'Spray Propiconazole 25% EC (1 ml/L water) or Tebuconazole',
-          'Ensure optimal nitrogen balance; avoid excess N application',
-          'Deep plow & destroy crop residues post-harvest'
-        ],
-        organicControl: 'Dusting with fine elemental sulfur or fermented buttermilk spray'
-      },
-      {
-        disease: 'Bacterial Leaf Blight (Xanthomonas oryzae)',
-        cropType: crop || 'Rice/Cotton',
-        confidence: 98.9,
-        severity: 'High',
-        symptoms: ['Water-soaked yellow-orange wavy margins', 'Wilted leaf tip drying', 'Bacterial ooze droplets in humid conditions'],
-        treatments: [
-          'Spray Streptocycline (0.1g/L) + Copper Oxychloride (2g/L)',
-          'Drain excess standing water from fields immediately',
-          'Avoid entering fields when crop foliage is wet'
-        ],
-        organicControl: 'Pseudomonas fluorescens 10g/L soil & foliar bio-control'
-      },
-      {
-        disease: 'Powdery Mildew (Erysiphe cichoracearum)',
-        cropType: crop || 'Cucurbit/Legume/Ragi',
-        confidence: 98.4,
-        severity: 'Low to Moderate',
-        symptoms: ['White talcum-like powdery patches on upper leaf surface', 'Leaf curling & premature leaf drop', 'Photosynthetic capacity suppression'],
-        treatments: [
-          'Spray Wettable Sulfur 80% WP (3g/L)',
-          'Increase crop row spacing to maximize ventilation',
-          'Apply Hexaconazole 5% EC if infection exceeds threshold'
-        ],
-        organicControl: 'Baking soda solution (5g/L water + 2 drops liquid soap)'
-      },
-      {
-        disease: 'Healthy Leaf (No Pathogen Detected)',
-        cropType: crop || 'General Crop',
-        confidence: 99.5,
-        severity: 'None',
-        symptoms: ['Vibrant green pigmentation', 'Intact epidermal cuticle', 'Zero spots, lesions, or fungal pustules'],
-        treatments: [
-          'Maintain regular fertigation & irrigation schedule',
-          'Continue routine monitoring every 5-7 days'
-        ],
-        organicControl: 'Preventive Neem oil application once every 14 days'
-      }
-    ];
-
-    // Select diagnosis using deterministic image signature + ResNet feature extraction
-    const hash = Math.abs(image.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)) % cnnDiagnoses.length;
-    const selectedResult = cnnDiagnoses[hash];
-
-    const response = {
-      model: 'Deep Squeeze-and-Excitation ResNet-SE Vision CNN',
-      accuracy: '98.85%',
-      status: 'success',
-      timestamp: new Date().toISOString(),
-      crop: crop || selectedResult.cropType,
-      diagnosis: selectedResult.disease,
-      confidence: selectedResult.confidence,
-      severity: selectedResult.severity,
-      isHealthy: selectedResult.severity === 'None',
-      symptoms: selectedResult.symptoms,
-      recommendedTreatments: selectedResult.treatments,
-      organicControl: selectedResult.organicControl,
-      cnnMetrics: {
-        architecture: 'ResNet50-SE 1D/2D Deep ConvNet',
-        featureExtractor: '14 Multi-Domain Engineered Feature Maps',
-        quantization: 'FP32 Precision',
-        inferenceTimeMs: 14.2
-      }
-    };
-
-    console.log('✅ High-Accuracy ResNet-SE CNN Result:', response.diagnosis, `(${response.confidence}%)`);
-    res.json(response);
+    // Run PyTorch MobileNetV2 Vision Classifier
+    try {
+      const mobileNetResult = await predictDiseaseMobileNetV2(image, crop);
+      console.log('✅ MobileNetV2 Scan Result:', mobileNetResult.diagnosis, `(${mobileNetResult.confidence}%)`, `isHealthy: ${mobileNetResult.isHealthy}`);
+      return res.json({
+        ...mobileNetResult,
+        timestamp: new Date().toISOString()
+      });
+    } catch (mlErr) {
+      console.error('❌ MobileNetV2 inference failure:', mlErr.message);
+      return res.status(422).json({
+        status: 'invalid_image',
+        valid: false,
+        error: 'Invalid Image',
+        message: 'Invalid Image: Please upload a clear photograph of a crop leaf.',
+        details: mlErr.message
+      });
+    }
   } catch (error) {
-    console.error('CNN Image Disease prediction error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    console.error('MobileNetV2 Disease prediction server error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: 'Internal server error',
+      message: 'Invalid Image: Please upload a clear photograph of a crop leaf.'
+    });
   }
 });
 

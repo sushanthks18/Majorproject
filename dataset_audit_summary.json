@@ -1,0 +1,58 @@
+{
+  "dataset_directory": "/Users/sushanthks/Documents/Major Project/plantvillage dataset/color",
+  "audit_timestamp_iso": "",
+  "metadata_and_license": {
+    "source": "Unknown / Unverified",
+    "license": "Unverified / No license file detected",
+    "documentation_files_found": []
+  },
+  "classes_audit": {
+    "total_target_classes": 19,
+    "classes_with_data": 8,
+    "missing_classes": [
+      "Rice___Blast",
+      "Rice___Bacterial_Blight",
+      "Rice___Brown_Spot",
+      "Rice___Healthy",
+      "Wheat___Leaf_Rust",
+      "Wheat___Powdery_Mildew",
+      "Wheat___Healthy",
+      "Cotton___Bacterial_Blight",
+      "Cotton___Healthy",
+      "Ragi___Blast",
+      "Ragi___Healthy"
+    ],
+    "low_sample_classes": [],
+    "adequate_volume_classes": [
+      "Tomato___Early_Blight",
+      "Tomato___Late_Blight",
+      "Tomato___Healthy",
+      "Potato___Early_Blight",
+      "Potato___Late_Blight",
+      "Potato___Healthy",
+      "Corn___Common_Rust",
+      "Corn___Healthy"
+    ],
+    "imbalance_ratio": "12.56:1"
+  },
+  "image_counts": {
+    "total_valid_images": 9006,
+    "total_corrupted_images": 0,
+    "unmatched_images_in_folder": 45299
+  },
+  "integrity_and_duplicates": {
+    "exact_duplicate_groups": 14,
+    "total_exact_duplicate_files": 14,
+    "near_duplicate_pairs": 0,
+    "perceptual_hash_threshold": "Hamming distance <= 4"
+  },
+  "data_leakage": {
+    "cross_split_exact_leakage_groups": 0,
+    "cross_split_exact_leakage_files": 0,
+    "cross_split_near_leakage_pairs": 0
+  },
+  "training_readiness_assessment": {
+    "readiness_status": "NOT_READY_MISSING_CLASSES (11 of 19 classes missing)",
+    "disclaimer": "Dataset audit confirms file validity, volume, and absence of duplicate leakage. Trainability further requires expert botanical validation of image labels, environmental background diversity, and absence of lab-condition bias."
+  }
+}
