@@ -38,8 +38,8 @@ const char* ssid = "YOUR_WIFI_SSID";           // Replace with your WiFi name
 const char* password = "YOUR_WIFI_PASSWORD";   // Replace with your WiFi password
 
 // ===== Server Configuration =====
-// Update this with your server IP (e.g. http://192.168.1.9:5001/api/sensors/data)
-const char* serverUrl = "http://192.168.1.9:5001/api/sensors/data";
+// Update this with your server IP (e.g. http://10.0.9.133:5001/api/sensors/data)
+const char* serverUrl = "http://10.0.9.133:5001/api/sensors/data";
 const char* deviceId = "ESP32_SENSOR_001";     // Unique device identifier
 const char* apiKey = "krishi_sakha_device_secret_2026";      // Device secret token
 

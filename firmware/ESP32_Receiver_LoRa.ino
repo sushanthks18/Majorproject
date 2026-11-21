@@ -33,7 +33,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // ================= Persistent Storage =================
 Preferences preferences;
 char deviceToken[64] = "krishi_sakha_device_secret_2026";
-char customBackend[128] = "";
+char customBackend[128] = "10.0.9.133";
 
 // ================= Dynamic Backend State =================
 String backendUrl = "";
@@ -273,6 +273,7 @@ bool discoverBackend() {
 
   // 3. Resolve hostname krishisakha, krishisakha-backend, or Mac hostnames via MDNS
   const char* hostCandidates[] = {
+    "krishisakha-2",
     "krishisakha",
     "krishisakha-backend",
     "Sushanths-MacBook-Air-4",
@@ -590,12 +591,17 @@ void setup() {
   // Initialize NVS storage
   preferences.begin("krishi", false);
   String storedToken = preferences.getString("dev_token", "krishi_sakha_device_secret_2026");
-  String storedHost = preferences.getString("backend_host", "");
+  String storedHost = preferences.getString("backend_host", "10.0.9.133");
   preferences.end();
 
   storedToken.toCharArray(deviceToken, sizeof(deviceToken));
-  storedHost.toCharArray(customBackend, sizeof(customBackend));
+  if (storedHost.length() > 0) {
+    storedHost.toCharArray(customBackend, sizeof(customBackend));
+  } else {
+    strncpy(customBackend, "10.0.9.133", sizeof(customBackend) - 1);
+  }
   Serial.printf("🔑 [Auth] Device Token loaded: %s\n", deviceToken);
+  Serial.printf("🌐 [Backend] Target Host loaded: %s\n", customBackend);
 
   // Initialize LCD
   Wire.begin(21, 22);

@@ -1,21 +1,25 @@
 import axios from 'axios';
 
 export const getApiBaseUrl = () => {
-  // 1. Custom manual IP configured in dashboard for offline LAN mode
+  // 1. If running on localhost or 127.0.0.1, always directly use local backend
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5001/api';
+  }
+  // 2. Custom manual IP configured in dashboard for offline LAN mode
   const customIp = typeof window !== 'undefined' ? localStorage.getItem('krishi_custom_server_ip') : null;
   if (customIp && customIp.trim() !== '') {
     const clean = customIp.trim().replace(/^https?:\/\//i, '').replace(/:\d+$/, '').replace(/\/.*$/, '');
     return `http://${clean}:5001/api`;
   }
-  // 2. Dynamic hostname resolution when accessing from phone/LAN IP (not localhost)
+  // 3. Dynamic hostname resolution when accessing from phone/LAN IP (not localhost)
   if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     return `http://${window.location.hostname}:5001/api`;
   }
-  // 3. Production / cloud URL if not pointing to localhost
+  // 4. Production / cloud URL if not pointing to localhost
   if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost') && !import.meta.env.VITE_API_URL.includes('127.0.0.1')) {
     return import.meta.env.VITE_API_URL.trim();
   }
-  // 4. Default localhost development fallback
+  // 5. Default localhost development fallback
   return 'http://localhost:5001/api';
 };
 
