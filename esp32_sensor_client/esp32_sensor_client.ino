@@ -38,9 +38,10 @@ const char* ssid = "YOUR_WIFI_SSID";           // Replace with your WiFi name
 const char* password = "YOUR_WIFI_PASSWORD";   // Replace with your WiFi password
 
 // ===== Server Configuration =====
-const char* serverUrl = "http://c3d68d5ed3b1be.lhr.life/api/sensors/data";  // Dynamically points to the running backend local host
+// Update this with your server IP (e.g. http://192.168.1.9:5001/api/sensors/data)
+const char* serverUrl = "http://192.168.1.9:5001/api/sensors/data";
 const char* deviceId = "ESP32_SENSOR_001";     // Unique device identifier
-const char* apiKey = "your-api-key-here";      // Optional API key for authentication
+const char* apiKey = "krishi_sakha_device_secret_2026";      // Device secret token
 
 // ===== Sensor Pin Configuration =====
 #define DHT_PIN 4           // DHT22 data pin
@@ -246,6 +247,7 @@ void sendToBackend(SensorData data) {
   HTTPClient http;
   http.begin(client, serverUrl);
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Device-Token", apiKey);
   
   // Create JSON payload
   StaticJsonDocument<256> jsonDoc;
@@ -255,6 +257,7 @@ void sendToBackend(SensorData data) {
   jsonDoc["pH"] = data.pH;
   jsonDoc["rainLevel"] = data.rainLevel;
   jsonDoc["deviceId"] = deviceId;
+  jsonDoc["deviceToken"] = apiKey;
   jsonDoc["apiKey"] = apiKey;
   
   String jsonString;

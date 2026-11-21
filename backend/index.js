@@ -42,7 +42,7 @@ const io = new Server(httpServer, {
 app.use(cors({
   origin: '*', // Allow all origins for IoT devices and remote dashboards
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Token', 'x-device-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Token', 'x-device-token', 'X-Api-Key', 'x-api-key', 'apiKey'],
   credentials: true
 }));
 app.use(express.json());

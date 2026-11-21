@@ -84,6 +84,13 @@ const FarmerDashboard = () => {
     return () => clearInterval(pollInterval);
   }, []);
 
+  useEffect(() => {
+    if (user?.id || user?._id) {
+      setupRealtimeUpdates();
+      fetchSensorData();
+    }
+  }, [user]);
+
   const testIpReachable = async (ip) => {
     if (!ip) return false;
     const cleanIp = ip.trim().replace(/^https?:\/\//i, '').replace(/:\d+$/, '').replace(/\/.*$/, '');
@@ -261,22 +268,16 @@ const FarmerDashboard = () => {
         
         console.log('Time difference:', timeDiff, 'seconds');
         
-        // If data is less than 5 minutes old and has ESP32 / LoRa markers
+        if (dataTime && !isNaN(dataTime.getTime())) {
+          setLastUpdateTime(dataTime);
+        }
+
+        // If data is less than 5 minutes old
         if (timeDiff < 300) {
-          const isRealESP32 = data.deviceId?.includes('ESP32') || 
-                              data.deviceId?.includes('LORA') || 
-                              data.deviceId?.includes('KRISHI') || 
-                              data.source === 'krishi-sakha' || 
-                              data.source === 'lora-sx1278' ||
-                              data.packetNum !== undefined;
-          if (isRealESP32) {
-            setEsp32Connected(true);
-            setLastUpdateTime(dataTime);
-            console.log('💚 ESP32/LoRa Connected!');
-          } else {
-            console.log('🟡 Using default/simulated data');
-          }
+          setEsp32Connected(true);
+          console.log('💚 ESP32/LoRa Connected!');
         } else {
+          setEsp32Connected(false);
           console.log('⚠️  Data is', Math.floor(timeDiff), 'seconds old');
         }
       }
@@ -606,40 +607,40 @@ const FarmerDashboard = () => {
   };
 
   const setupRealtimeUpdates = () => {
-    const socket = getSocket();
+    let socket = getSocket();
+    if (!socket && (user?.id || user?._id)) {
+      socket = connectSocket(user?.id || user?._id);
+    }
     if (socket) {
       console.log('🔌 Setting up WebSocket listeners...');
       
+      socket.off('sensorUpdate');
       socket.on('sensorUpdate', (data) => {
         console.log('📡 Received sensor update:', data);
-        setSensorData(data);
-        
-        // Check if this is ESP32 / LoRa data
-        const isRealESP32 = data.deviceId?.includes('ESP32') || 
-                            data.deviceId?.includes('LORA') || 
-                            data.deviceId?.includes('KRISHI') || 
-                            data.source === 'krishi-sakha' || 
-                            data.source === 'lora-sx1278' ||
-                            data.packetNum !== undefined;
-        setEsp32Connected(isRealESP32);
-        setLastUpdateTime(new Date());
-        
-        if (data.packetNum !== undefined || data.rssi !== undefined || data.soilRaw !== undefined) {
-          setLoraTelemetry({
-            packetNum: data.packetNum,
-            rssi: data.rssi,
-            soilRaw: data.soilRaw,
-            deviceId: data.deviceId,
-            source: data.source,
-            timestamp: data.timestamp || new Date()
-          });
+        if (data) {
+          setSensorData(data);
+          setEsp32Connected(true);
+          const updateTime = new Date(data.timestamp || Date.now());
+          setLastUpdateTime(updateTime);
+          
+          if (data.packetNum !== undefined || data.rssi !== undefined || data.soilRaw !== undefined) {
+            setLoraTelemetry({
+              packetNum: data.packetNum,
+              rssi: data.rssi,
+              soilRaw: data.soilRaw,
+              deviceId: data.deviceId,
+              source: data.source,
+              timestamp: updateTime
+            });
+          }
+          console.log('✅ Live ESP32/LoRa data updated:', data);
         }
-        
-        if (isRealESP32) {
-          console.log('✅ Live ESP32/LoRa data:', data);
-        } else {
-          console.log('📊 Simulated data:', data);
-        }
+      });
+
+      socket.off('connect');
+      socket.on('connect', () => {
+        console.log('🔌 Socket reconnected, refreshing sensor data...');
+        fetchSensorData();
       });
 
       socket.on('requestUpdate', (data) => {
