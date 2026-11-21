@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -23,8 +24,12 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 const char* WIFI_SSID = "LORA";
 const char* WIFI_PASSWORD = "11112222";
 
-// ✅ EXACT MACBOOK WI-FI IP ADDRESS:
-const char* BACKEND_URL = "http://10.240.60.37:5001/api/sensors/data";
+// ================= Dynamic Auto-Discovery Backend State =================
+// Starts with initial fallback, then updates automatically whenever MacBook sends beacon:
+String backendUrl = "http://10.240.60.37:5001/api/sensors/data";
+WiFiUDP udp;
+const int UDP_BEACON_PORT = 5002;
+bool udpListening = false;
 
 // ================= Wi-Fi Timing =================
 unsigned long lastWiFiAttempt = 0;
@@ -93,6 +98,41 @@ void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 }
 
+// ================= Automatic UDP Beacon Listener =================
+// Listens for MacBook beacon broadcast to detect MacBook's IP on ANY Wi-Fi automatically
+void checkUdpBeacon() {
+  if (WiFi.status() != WL_CONNECTED) {
+    udpListening = false;
+    return;
+  }
+  if (!udpListening) {
+    udp.begin(UDP_BEACON_PORT);
+    udpListening = true;
+    Serial.println("📡 [Auto-Discovery] Listening for MacBook Beacon on port 5002...");
+  }
+
+  int packetSize = udp.parsePacket();
+  if (packetSize > 0) {
+    char buffer[256];
+    int len = udp.read(buffer, sizeof(buffer) - 1);
+    if (len > 0) {
+      buffer[len] = '\0';
+      StaticJsonDocument<256> beaconDoc;
+      DeserializationError err = deserializeJson(beaconDoc, buffer);
+      if (!err && beaconDoc.containsKey("ip")) {
+        const char* detectedIp = beaconDoc["ip"];
+        int detectedPort = beaconDoc["port"] | 5001;
+        String newUrl = "http://" + String(detectedIp) + ":" + String(detectedPort) + "/api/sensors/data";
+        if (newUrl != backendUrl) {
+          backendUrl = newUrl;
+          Serial.println("\n🎯 [AUTO-DISCOVERY SUCCESS] Detected MacBook IP over Wi-Fi!");
+          Serial.println("   New Dashboard Target: " + backendUrl);
+        }
+      }
+    }
+  }
+}
+
 // ================= Backend Upload =================
 void sendToBackend() {
   if (WiFi.status() != WL_CONNECTED) {
@@ -109,8 +149,8 @@ void sendToBackend() {
   http.setConnectTimeout(5000);
   http.setTimeout(5000);
 
-  if (!http.begin(BACKEND_URL)) {
-    Serial.println("Failed to initialize backend URL.");
+  if (!http.begin(backendUrl)) {
+    Serial.println("Failed to initialize backend URL: " + backendUrl);
     return;
   }
 
@@ -133,8 +173,8 @@ void sendToBackend() {
 
   String payload;
   serializeJson(doc, payload);
-  Serial.println("Uploading sensor data to MacBook:");
-  Serial.println(payload);
+  Serial.print("Uploading sensor data to ");
+  Serial.println(backendUrl);
 
   int httpCode = http.POST(payload);
   if (httpCode > 0) {
@@ -271,10 +311,13 @@ void setup() {
 
 // ================= Main Loop =================
 void loop() {
-  // Attempt Wi-Fi reconnection when disconnected.
+  // 1. Maintain Wi-Fi connection
   connectWiFi();
 
-  // Check for received LoRa packets.
+  // 2. Automatically check for MacBook Beacon to update IP on ANY Wi-Fi
+  checkUdpBeacon();
+
+  // 3. Check for received LoRa packets.
   int packetSize = LoRa.parsePacket();
   if (packetSize > 0) {
     String packet = "";
@@ -316,7 +359,7 @@ void loop() {
       // Preserve the existing LCD behaviour.
       displayScreen();
 
-      // Forward the received values to the backend.
+      // Forward the received values to the dynamically discovered backend.
       sendToBackend();
 
       Serial.print("Temperature: ");

@@ -9,6 +9,7 @@ import { syncPriorityData } from './sync_gov_data.js';
 import { autoAggregateHourly } from './services/sensorAggregation.js';
 import { Bonjour } from 'bonjour-service';
 import os from 'os';
+import dgram from 'dgram';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -208,6 +209,35 @@ httpServer.listen(PORT, '0.0.0.0', () => {
     return '127.0.0.1';
   };
 
+  // 📡 UDP Auto-Discovery Beacon Broadcaster on Port 5002
+  let udpBeacon = null;
+  try {
+    udpBeacon = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+    udpBeacon.bind(0, () => {
+      udpBeacon.setBroadcast(true);
+      console.log('📡 [UDP Beacon] Broadcaster active on port 5002 for automatic ESP32 auto-discovery');
+    });
+
+    setInterval(() => {
+      const currentIp = getPrimaryLanIp();
+      if (currentIp && currentIp !== '127.0.0.1' && udpBeacon) {
+        const beaconPayload = Buffer.from(JSON.stringify({
+          app: 'krishisakha',
+          ip: currentIp,
+          port: parseInt(PORT, 10),
+          path: '/api/sensors/data'
+        }));
+        udpBeacon.send(beaconPayload, 0, beaconPayload.length, 5002, '255.255.255.255', (err) => {
+          if (err && err.code !== 'EPERM') {
+            // benign network drop
+          }
+        });
+      }
+    }, 2000);
+  } catch (udpErr) {
+    console.warn('⚠️ [UDP Beacon] Initialization error:', udpErr.message);
+  }
+
   // mDNS Service Advertisement for ESP32 Receiver Auto-Discovery
   let bonjourInstance = null;
   let lastAdvertisedIp = '127.0.0.1';
@@ -266,6 +296,9 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   const cleanup = () => {
     if (bonjourInstance) {
       try { bonjourInstance.destroy(); } catch (e) {}
+    }
+    if (udpBeacon) {
+      try { udpBeacon.close(); } catch (e) {}
     }
   };
   process.on('SIGINT', () => { cleanup(); process.exit(0); });
