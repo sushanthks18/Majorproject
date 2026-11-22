@@ -35,9 +35,9 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = async (email, password, role) => {
+  const login = async (identifier, password, role) => {
     try {
-      const response = await api.post('/auth/login', { email, password, role });
+      const response = await api.post('/auth/login', { identifier, email: identifier, phone: identifier, password, role });
       const { token, user: userData } = response.data;
       
       localStorage.setItem('token', token);
@@ -50,6 +50,41 @@ export const AuthProvider = ({ children }) => {
       return { 
         success: false, 
         error: error.response?.data?.error || 'Login failed' 
+      };
+    }
+  };
+
+  const sendOtp = async (phone, role) => {
+    try {
+      const response = await api.post('/auth/send-otp', { phone, role });
+      return { 
+        success: true, 
+        message: response.data?.message || 'OTP sent successfully',
+        otp: response.data?.otp 
+      };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Failed to send OTP' 
+      };
+    }
+  };
+
+  const verifyOtp = async (phone, otp, role) => {
+    try {
+      const response = await api.post('/auth/verify-otp', { phone, otp, role });
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      connectSocket(userData.id);
+      
+      return { success: true, user: userData };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Failed to verify OTP' 
       };
     }
   };
@@ -87,7 +122,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateUser, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, sendOtp, verifyOtp, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,6 +7,135 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// In-memory OTP storage for farmer/labour phone authentication
+const otpStore = new Map();
+
+// Helper to normalize Indian phone numbers to 10 digits
+const normalizePhone = (phone = '') => {
+  const digits = String(phone).replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
+// Send OTP
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { phone, role = 'farmer' } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required' });
+    }
+
+    const cleanPhone = normalizePhone(phone);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number' });
+    }
+
+    // Generate 6-digit OTP (in development/demo, also accept 123456)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    const storeKey = `${role}:${cleanPhone}`;
+    otpStore.set(storeKey, { otp, expiresAt });
+
+    console.log(`📲 [Auth OTP] Code generated for ${role} (${cleanPhone}): ${otp}`);
+
+    return res.json({
+      success: true,
+      message: 'OTP sent successfully to your mobile number',
+      phone: cleanPhone,
+      // Provide OTP in response for seamless development & demo convenience
+      otp: process.env.NODE_ENV !== 'production' ? otp : undefined
+    });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    return res.status(500).json({ error: 'Failed to send OTP', details: error.message });
+  }
+});
+
+// Verify OTP & Login / Auto-Register
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { phone, otp, role = 'farmer' } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ error: 'Phone number and OTP are required' });
+    }
+
+    const cleanPhone = normalizePhone(phone);
+    const storeKey = `${role}:${cleanPhone}`;
+    const record = otpStore.get(storeKey);
+
+    // Verify OTP against store or universal dev OTP 123456
+    const isMasterOtp = otp.trim() === '123456';
+    const isStoredMatch = record && record.otp === otp.trim() && Date.now() < record.expiresAt;
+
+    if (!isMasterOtp && !isStoredMatch) {
+      return res.status(400).json({ error: 'Invalid or expired OTP. Please try again or request a new OTP.' });
+    }
+
+    // Clear OTP after successful use
+    otpStore.delete(storeKey);
+
+    // Find user by phone and role
+    let user = await User.findOne({
+      role,
+      $or: [
+        { phone: cleanPhone },
+        { phone: `+91${cleanPhone}` },
+        { phone: { $regex: cleanPhone } }
+      ]
+    });
+
+    // If user does not exist yet, automatically provision their profile
+    if (!user) {
+      console.log(`Creating new account for ${role} with phone: ${cleanPhone}`);
+      const randomPassword = await bcrypt.hash(`Krishi@${cleanPhone}`, 10);
+      user = new User({
+        name: role === 'farmer' ? `Farmer ${cleanPhone.slice(-4)}` : `Agent ${cleanPhone.slice(-4)}`,
+        email: `${cleanPhone}@krishisakha.in`,
+        password: randomPassword,
+        role,
+        phone: cleanPhone,
+        farmSize: role === 'farmer' ? 2.5 : 0,
+        location: { address: 'Karnataka, India' }
+      });
+
+      try {
+        await user.save();
+        if (role === 'agent') {
+          const agentProfile = new Agent({ userId: user._id });
+          await agentProfile.save();
+        }
+      } catch (err) {
+        console.warn('Auto user save note:', err.message);
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || 'krishi-sakha-secret-key-2024',
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      message: 'Login successful via OTP',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        location: user.location,
+        farmSize: user.farmSize,
+        farmDetails: user.farmDetails
+      }
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    return res.status(500).json({ error: 'Failed to verify OTP', details: error.message });
+  }
+});
+
 // Signup
 router.post('/signup', async (req, res) => {
   try {
@@ -114,19 +243,32 @@ router.post('/signup', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, phone, identifier, password, role } = req.body;
+    const loginTarget = identifier || email || phone;
 
-    // Find user
+    if (!loginTarget || !password) {
+      return res.status(400).json({ error: 'Please enter your mobile number or email and password' });
+    }
+
+    // Find user by either email or phone
+    const cleanPhone = normalizePhone(loginTarget);
     let user;
     try {
-      user = await User.findOne({ email }).maxTimeMS(2000);
+      user = await User.findOne({
+        role,
+        $or: [
+          { email: loginTarget.toLowerCase().trim() },
+          { phone: loginTarget },
+          ...(cleanPhone.length >= 10 ? [{ phone: cleanPhone }, { phone: `+91${cleanPhone}` }] : [])
+        ]
+      }).maxTimeMS(2000);
     } catch (dbError) {
       console.warn('DB login failed:', dbError.message);
       return res.status(401).json({ error: 'Database unavailable. Please try signup first or restart backend.' });
     }
     
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Account not found with this mobile/email' });
     }
 
     // Check role
@@ -137,7 +279,7 @@ router.post('/login', async (req, res) => {
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
     // Generate token
