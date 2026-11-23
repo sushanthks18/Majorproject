@@ -28,31 +28,24 @@ except ImportError as e:
     print(f"❌ Error: PyTorch or Torchvision is missing: {e}")
     sys.exit(1)
 
-# Canonical 19-class taxonomy from mobilenet_v2_disease.py
-ALL_TAXONOMY_CLASSES = [
-    "Tomato___Early_Blight",
-    "Tomato___Late_Blight",
-    "Tomato___Healthy",
-    "Potato___Early_Blight",
-    "Potato___Late_Blight",
-    "Potato___Healthy",
-    "Rice___Blast",
-    "Rice___Bacterial_Blight",
-    "Rice___Brown_Spot",
-    "Rice___Healthy",
-    "Wheat___Leaf_Rust",
-    "Wheat___Powdery_Mildew",
-    "Wheat___Healthy",
-    "Corn___Common_Rust",
-    "Corn___Healthy",
-    "Cotton___Bacterial_Blight",
-    "Cotton___Healthy",
+# Target 4-Crop Taxonomy for Krishi Sakha
+SUPPORTED_CLASSES = [
+    "Paddy___Bacterial_Blight",
+    "Paddy___Blast",
+    "Paddy___Brown_Spot",
+    "Paddy___Healthy",
     "Ragi___Blast",
-    "Ragi___Healthy"
+    "Ragi___Brown_Spot",
+    "Ragi___Healthy",
+    "Jowar___Anthracnose",
+    "Jowar___Leaf_Blight",
+    "Jowar___Healthy",
+    "Coconut___Bud_Rot",
+    "Coconut___Leaf_Spot",
+    "Coconut___Stem_Bleeding",
+    "Coconut___Healthy"
 ]
-
-# Supported classes (17 classes; Ragi is strictly excluded / NOT SUPPORTED YET)
-SUPPORTED_CLASSES = [c for c in ALL_TAXONOMY_CLASSES if "Ragi" not in c]
+ALL_TAXONOMY_CLASSES = SUPPORTED_CLASSES
 CLASS_TO_IDX = {c: i for i, c in enumerate(SUPPORTED_CLASSES)}
 IDX_TO_CLASS = {i: c for i, c in enumerate(SUPPORTED_CLASSES)}
 
@@ -206,7 +199,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=32, help="Mini-batch size")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for AdamW")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
-    parser.add_argument("--base-dir", type=str, default="backend/ml", help="Base directory for ML artifacts")
+    parser.add_argument("--base-dir", type=str, default=str(Path(__file__).parent.resolve()), help="Base directory for ML artifacts")
     args = parser.parse_args()
     
     set_seed(args.seed)
@@ -239,8 +232,8 @@ def main():
     print(f"Hardware Compute Device: {device_name}")
     print(f"PyTorch Version:         {torch.__version__}")
     print(f"Random Seed:             {args.seed}")
-    print(f"Supported Classes:       {len(SUPPORTED_CLASSES)} of 19")
-    print(f"Excluded Classes:        Ragi___Blast, Ragi___Healthy (NOT SUPPORTED YET)")
+    print(f"Supported Classes:       {len(SUPPORTED_CLASSES)} (Paddy, Ragi, Jowar, Coconut)")
+    print(f"Excluded Crops:          Tomato, Potato, Wheat, Corn, Cotton (Purged as requested)")
     print(f"Epochs:                  {args.epochs}")
     print(f"Batch Size:              {args.batch_size}")
     print(f"Learning Rate:           {args.lr}")
@@ -404,14 +397,11 @@ def main():
         "supported_classes": SUPPORTED_CLASSES,
         "class_to_idx": CLASS_TO_IDX,
         "idx_to_class": IDX_TO_CLASS,
-        "unsupported_classes": {
-            "Ragi___Blast": "NOT SUPPORTED YET (Requires verified Eleusine coracana field data)",
-            "Ragi___Healthy": "NOT SUPPORTED YET (Requires verified Eleusine coracana field data)"
-        },
+        "supported_crops": ["Paddy", "Ragi", "Jowar", "Coconut"],
         "taxonomy_compliance": {
-            "total_taxonomy_classes": 19,
-            "supported_classes_count": 17,
-            "unsupported_classes_count": 2,
+            "total_taxonomy_classes": len(SUPPORTED_CLASSES),
+            "supported_classes_count": len(SUPPORTED_CLASSES),
+            "unsupported_classes_count": 0,
             "ordering_preserved": True
         },
         "dependencies": {

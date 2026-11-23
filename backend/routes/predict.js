@@ -679,16 +679,13 @@ router.post('/disease', authenticate, async (req, res) => {
       }
     }
 
-    // Crop-specific diseases
+    // Crop-specific diseases for the 4 supported crops: Paddy, Ragi, Jowar, Coconut
     const cropDiseases = {
-      'Rice': ['Blast disease', 'Brown spot', 'Sheath blight'],
-      'Wheat': ['Rust diseases', 'Powdery mildew', 'Leaf blight'],
-      'Cotton': ['Boll worm', 'Leaf curl virus', 'Root rot'],
-      'Maize': ['Blight', 'Rust', 'Stalk rot'],
-      'Sugarcane': ['Red rot', 'Smut', 'Wilt'],
-      'Tomato': ['Late blight', 'Early blight', 'Leaf curl virus'],
-      'Potato': ['Late blight', 'Early blight', 'Black leg'],
-      'Soybean': ['Rust', 'Pod blight', 'Bacterial pustule']
+      'Paddy': ['Blast disease (Magnaporthe)', 'Brown spot', 'Bacterial leaf blight'],
+      'Rice': ['Blast disease (Magnaporthe)', 'Brown spot', 'Bacterial leaf blight'],
+      'Ragi': ['Blast disease (Pyricularia)', 'Brown spot', 'Neck blast'],
+      'Jowar': ['Anthracnose & Red rot', 'Leaf blight', 'Rust'],
+      'Coconut': ['Bud rot (Phytophthora)', 'Grey leaf spot', 'Stem bleeding']
     };
 
     // Add crop-specific advice

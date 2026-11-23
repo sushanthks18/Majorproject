@@ -10,7 +10,8 @@ import toast from 'react-hot-toast';
 const DiseaseCheck = () => {
   const [activeTab, setActiveTab] = useState('camera'); // 'camera' or 'environment'
   const [sensorData, setSensorData] = useState(null);
-  const [envCrop, setEnvCrop] = useState('Rice');
+  const [envCrop, setEnvCrop] = useState('Paddy');
+  const [selectedCrop, setSelectedCrop] = useState('Coconut');
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [esp32Connected, setEsp32Connected] = useState(false);
@@ -116,7 +117,8 @@ const DiseaseCheck = () => {
     try {
       setScanningImage(true);
       const response = await api.post('/predict/disease-image', {
-        image: selectedImage
+        image: selectedImage,
+        crop: selectedCrop
       });
       setCnnResult(response.data);
       if (response.data.status === 'invalid_image') {
@@ -234,11 +236,11 @@ const DiseaseCheck = () => {
                   </span>
                   <div>
                     <h3 className="font-bold text-emerald-950 text-base">AI Leaf Photography Guidance</h3>
-                    <p className="text-xs text-emerald-700">Follow these guidelines for automatic crop identification & leaf disease diagnosis</p>
+                  <p className="text-xs text-emerald-700">Choose the crop shown, then upload one clear leaf for disease screening</p>
                   </div>
                 </div>
                 <span className="hidden sm:inline-flex text-xs font-bold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">
-                  🌿 Multi-Crop AI Scanner
+                  🌿 Four-crop scanner
                 </span>
               </div>
 
@@ -268,8 +270,8 @@ const DiseaseCheck = () => {
                     </li>
                   </ul>
                   <div className="mt-3 pt-2.5 border-t border-emerald-200/60 flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-emerald-900 uppercase">Supported Crops:</span>
-                    {['Rice', 'Wheat', 'Tomato', 'Potato', 'Maize (Corn)', 'Cotton'].map((c) => (
+                    <span className="text-[11px] font-bold text-emerald-900 uppercase">In scope:</span>
+                    {['Ragi', 'Paddy', 'Jowar', 'Coconut'].map((c) => (
                       <span key={c} className="text-[11px] px-2 py-0.5 bg-white/80 text-emerald-800 font-semibold rounded-full border border-emerald-200">
                         {c}
                       </span>
@@ -337,6 +339,21 @@ const DiseaseCheck = () => {
                   </span>
                 </div>
               </div>
+            </Card>
+
+            <Card className="border border-purple-200 bg-purple-50/40">
+              <label className="block text-sm font-bold text-gray-800 mb-2">Select Crop for Leaf Disease Screening</label>
+              <select
+                value={selectedCrop}
+                onChange={(e) => { setSelectedCrop(e.target.value); setCnnResult(null); }}
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg font-semibold text-gray-800 focus:ring-2 focus:ring-purple-500 bg-white"
+              >
+                <option value="Ragi">🌾 Ragi (Finger Millet / ರಾಗಿ)</option>
+                <option value="Paddy">🌾 Paddy (Rice / ಭತ್ತ)</option>
+                <option value="Jowar">🌾 Jowar (Sorghum / ಜೋಳ)</option>
+                <option value="Coconut">🥥 Coconut (ತೆಂಗು)</option>
+              </select>
+              <p className="mt-2 text-xs text-gray-600">The deep learning model screens leaf pathology exclusively for Ragi, Paddy, Jowar, and Coconut with verified disease & healthy profiles.</p>
             </Card>
 
             <Card>
@@ -487,7 +504,7 @@ const DiseaseCheck = () => {
                       </h3>
                       <p className="text-gray-700 text-sm leading-relaxed mb-4">
                         {cnnResult.diagnosis === 'Uncertain / Unsupported Crop'
-                          ? 'This leaf photograph does not match any of the 6 supported crops (Rice, Wheat, Tomato, Potato, Corn, Cotton). To prevent crop damage and hazardous misapplication of chemical inputs, confirmed disease diagnoses and chemical sprays are strictly withheld.'
+                          ? 'This leaf photograph cannot be verified for the selected crop. To prevent crop damage and hazardous chemical use, a diagnosis and chemical treatment are withheld.'
                           : 'The visual features in this photo do not match any known disease class with high confidence. To prevent incorrect diagnoses and hazardous chemical applications, confirmed disease classifications and treatments are withheld.'}
                       </p>
                       {cnnResult.topPredictions && cnnResult.topPredictions.length > 0 && (
@@ -526,7 +543,7 @@ const DiseaseCheck = () => {
                         Disease detection for this crop is not supported yet.
                       </h3>
                       <p className="text-gray-700 text-sm leading-relaxed mb-4">
-                        Krishi Sakha currently supports 17 validated disease classes across Tomato, Potato, Rice, Wheat, Corn/Maize, and Cotton. Verified open-access training data for {cnnResult.crop} has not yet been integrated into the active model head.
+                        No verified, crop-specific model is installed for {cnnResult.crop}. The checker refuses to reuse a model trained on a different crop, because that would be a misleading result.
                       </p>
 
                       <div className="p-4 bg-white rounded-lg border border-amber-200 mb-4">
@@ -544,7 +561,7 @@ const DiseaseCheck = () => {
                       </div>
 
                       <div className="text-xs text-gray-500 italic">
-                        Model: {cnnResult.model} • 17 supported classes • {cnnResult.crop} disease screening pending verified field collection.
+                        {cnnResult.crop} needs labelled healthy and diseased leaf images, a trained model, and held-out evaluation before a disease result can be shown.
                       </div>
                     </div>
                   </div>
@@ -737,11 +754,12 @@ const DiseaseCheck = () => {
                 <select
                   value={envCrop}
                   onChange={(e) => setEnvCrop(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-800 focus:ring-2 focus:ring-purple-500"
+                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-800 focus:ring-2 focus:ring-purple-500 bg-white"
                 >
-                  {['Rice', 'Wheat', 'Cotton', 'Maize', 'Sugarcane', 'Tomato', 'Potato', 'Soybean', 'Ragi'].map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
+                  <option value="Ragi">Ragi (ರಾಗಿ)</option>
+                  <option value="Paddy">Paddy (ಭತ್ತ)</option>
+                  <option value="Jowar">Jowar (ಜೋಳ)</option>
+                  <option value="Coconut">Coconut (ತೆಂಗು)</option>
                 </select>
               </div>
             </Card>
