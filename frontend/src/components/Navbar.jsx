@@ -47,16 +47,16 @@ const Navbar = ({ role = 'farmer' }) => {
 
   // Define navigation items based on role
   const navItems = role === 'farmer' ? [
-    { name: t('dashboard') || 'Dashboard', path: '/farmer/dashboard', icon: Home },
-    { name: isKannada ? 'ಬೆಳೆ ಶಿಫಾರಸು' : 'Crop Advice', path: '/farmer/crop-recommendation', icon: Sprout },
-    { name: isKannada ? 'ರೋಗ ಪತ್ತೆ' : 'Disease Check', path: '/farmer/disease-check', icon: Activity },
-    { name: isKannada ? 'ಮಾರುಕಟ್ಟೆ ದರ' : 'Mandi Prices', path: '/farmer/mandi-prices', icon: TrendingUp },
-    { name: isKannada ? 'ವಿಶ್ಲೇಷಣೆ' : 'Analytics', path: '/farmer/analytics', icon: BarChart3 },
-    { name: isKannada ? 'ಕಾರ್ಮಿಕ ಸೇವೆಗಳು' : 'Labour Services', path: '/farmer/find-labour', icon: Users },
-    { name: t('myFields') || 'My Fields', path: '/farmer/fields', icon: MapPin },
+    { name: t('dashboard'), path: '/farmer/dashboard', icon: Home },
+    { name: t('cropRecommendation'), path: '/farmer/crop-recommendation', icon: Sprout },
+    { name: t('mandiPrices'), path: '/farmer/mandi-prices', icon: TrendingUp },
+    { name: t('myFields'), path: '/farmer/fields', icon: MapPin },
+    { name: 'News', path: '/farmer/news', icon: Bell },
+    { name: t('services'), path: '/farmer/find-labour', icon: Users },
+    { name: t('analytics'), path: '/farmer/analytics', icon: BarChart3 },
   ] : [
-    { name: t('dashboard') || 'Dashboard', path: '/agent/dashboard', icon: Home },
-    { name: isKannada ? 'ಸೇವಾ ವಿನಂತಿಗಳು' : 'Service Requests', path: '/agent/service-requests', icon: ClipboardList },
+    { name: t('dashboard'), path: '/agent/dashboard', icon: Home },
+    { name: t('services'), path: '/agent/service-requests', icon: ClipboardList },
   ];
 
   return (
@@ -181,27 +181,6 @@ const Navbar = ({ role = 'farmer' }) => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Bottom Navigation Bar for Farmer / Labour */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-emerald-100 shadow-2xl py-1 px-2 z-50 flex items-center justify-around text-gray-700">
-        {navItems.slice(0, 5).map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition text-[10px] ${
-                isActive 
-                  ? 'text-emerald-700 font-bold bg-emerald-50/80 shadow-xs' 
-                  : 'text-gray-500 hover:text-emerald-600'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
-              <span className="truncate max-w-[62px]">{item.name}</span>
-            </Link>
-          );
-        })}
       </div>
     </nav>
   );
